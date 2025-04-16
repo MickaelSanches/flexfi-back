@@ -24,7 +24,9 @@ Create a .env file based on the provided .env.example:
 `npm run dev`
 
 📁 **Project Structure**
+
 /src
+
  ┣ 📁 controllers       # API endpoints
 
  ┣ 📁 services          # Business logic
