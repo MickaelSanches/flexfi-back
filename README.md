@@ -1,33 +1,42 @@
 📦 **FlexFi Backend — flexfi-back**
+
 This repository contains the backend API and service logic for the FlexFi Protocol. Built with Node.js, Express, and TypeScript, it connects the frontend, smart contracts (Solana), and data storage layers.
 
 🚀 **Project Setup**
+
 1. Clone the repo
 
-git clone https://github.com/flexfi-protocol/flexfi-back.git
-cd flexfi-back
+`git clone https://github.com/flexfi-protocol/flexfi-back.git`
+
+`cd flexfi-back`
 
 2. Install dependencies
 
-npm install
+`npm install`
 
 3. Set up environment variables
 Create a .env file based on the provided .env.example:
 
-cp .env.example .env
+`cp .env.example .env`
 
 4. Run the development server
 
-npm run dev
+`npm run dev`
 
 📁 **Project Structure**
 /src
  ┣ 📁 controllers       # API endpoints
+
  ┣ 📁 services          # Business logic
+
  ┣ 📁 routes            # Route definitions
+
  ┣ 📁 repositories      # DB access layer
+
  ┣ 📁 middlewares       # Auth, logging, validation
+
  ┣ 📁 utils             # Helpers & formatters
+
  ┗ 📜 app.ts            # Main app entry point
 
 🛡 **License**
@@ -41,7 +50,9 @@ We welcome contributions from everyone. Please read our CONTRIBUTING.md to get s
 📫 **Contact**
 
 Lead Maintainer: MickaelSanches
+
 Email: contact@flex-fi.io
+
 Website: https://www.flex-fi.io/
 
 Built with 💜 for the Solana Breakout Hackathon 2025
