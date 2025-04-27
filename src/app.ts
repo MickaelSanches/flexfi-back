@@ -41,7 +41,7 @@ passport.use(
       consumerSecret: authConfig.twitter.consumerSecret,
       callbackURL: authConfig.twitter.callbackURL,
     },
-    (_token, _tokenSecret, profile, done) => {
+    (_token: string, _tokenSecret: string, profile: any, done: (err: Error | null, user?: any) => void) => {
       // L'authentification est gérée par le contrôleur
       done(null, profile);
     }

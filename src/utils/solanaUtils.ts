@@ -4,10 +4,13 @@ import {
     PublicKey,
     Transaction,
     sendAndConfirmTransaction,
-    SystemProgram
+    SystemProgram,
+    ComputeBudgetProgram
   } from '@solana/web3.js';
-  import * as bs58 from 'bs58';
+  import bs58 from 'bs58';
   import nacl from 'tweetnacl';
+  import { AppError } from './AppError';
+  import logger from './logger';
   
   // Connexion à Solana (configurable via variable d'environnement)
   const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
@@ -18,24 +21,32 @@ import {
     return Keypair.generate();
   };
   
-  // Vérifier une signature
+  /**
+   * Vérifie la signature d'un message
+   * @param message Le message signé
+   * @param signature La signature à vérifier
+   * @param publicKey La clé publique du signataire
+   * @returns true si la signature est valide, false sinon
+   */
   export const verifySignature = (
-    publicKey: string,
     message: string,
-    signature: string
+    signature: string,
+    publicKey: string
   ): boolean => {
     try {
+      // Convertir les entrées en tableaux d'octets
+      const messageBytes = new TextEncoder().encode(message);
       const publicKeyBytes = new PublicKey(publicKey).toBytes();
       const signatureBytes = bs58.decode(signature);
-      const messageBytes = new TextEncoder().encode(message);
-      
+
+      // Vérifier la signature avec nacl
       return nacl.sign.detached.verify(
         messageBytes,
         signatureBytes,
         publicKeyBytes
       );
     } catch (error) {
-      console.error('Error verifying signature:', error);
+      logger.error('Error verifying signature:', error);
       return false;
     }
   };
