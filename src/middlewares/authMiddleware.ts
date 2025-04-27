@@ -45,6 +45,9 @@ export const authenticate = async (
   }
 };
 
+// Alias for authenticate middleware for better readability in route definitions
+export const authMiddleware = authenticate;
+
 // Middleware pour les routes admin uniquement
 export const adminOnly = (
   req: Request,

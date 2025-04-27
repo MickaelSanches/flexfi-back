@@ -15,4 +15,5 @@ Controllers keep the route definitions clean by encapsulating the request handli
 - **cardController.ts**: Manages virtual card operations such as selection, activation, and blocking.
 - **delegationController.ts**: Handles Solana token delegation operations for enabling FlexFi to perform transactions on behalf of users.
 - **kycController.ts**: Manages the Know Your Customer verification process and status updates.
+- **notificationController.ts**: Handles user notification operations including retrieving notifications, marking as read, and getting unread counts.
 - **walletController.ts**: Handles Solana wallet operations including creation, connection, and verification. 

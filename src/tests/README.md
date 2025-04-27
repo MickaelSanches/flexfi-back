@@ -1,17 +1,41 @@
 # Tests Directory
 
-This directory contains test files for verifying the functionality and reliability of the application. A comprehensive testing strategy is critical for:
+This directory contains test files for the application, organized by test type. We use Jest as our primary testing framework with supporting libraries for HTTP testing and database mocking.
 
-- Ensuring code correctness and preventing regressions
-- Facilitating refactoring by quickly identifying breaking changes
-- Documenting expected behavior through test cases
-- Improving code quality by forcing modularity and testability
-- Providing confidence when deploying new features or changes
+## Test Structure
 
-The test suite is organized by test type to maintain separation between different testing strategies and to ensure appropriate test coverage at different levels of the application.
+- **integration/**: Contains tests that verify the interaction between multiple components, typically through API endpoints.
+- **services/**: Contains unit tests for service-layer business logic.
+- **utils/**: Contains tests for utility functions and helpers.
 
-## Structure
+## Test Environment
 
-- **integration/**: Contains integration tests that verify the interaction between different parts of the application.
-- **services/**: Contains unit tests for service layer functions.
-- **setup.ts**: Contains test setup code for configuring the test environment. 
+- **setup.ts**: Configures the test environment including environment variables, test timeouts, and global setup.
+
+## Testing Approach
+
+1. **Unit Testing**: Focused on testing individual functions and methods in isolation.
+2. **Integration Testing**: Tests the interaction between components via API endpoints.
+3. **Mock Database**: Uses mongodb-memory-server to provide an isolated MongoDB instance for tests.
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+
+# Generate test coverage report
+npm run test:coverage
+```
+
+## Environment Setup
+
+Tests use a separate `.env.test` file that contains test-specific environment variables. This ensures that tests don't interfere with development or production databases.
+
+A template file `.env.example.test` is created at the project root with appropriate test values for all required environment variables. 

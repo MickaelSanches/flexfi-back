@@ -15,4 +15,5 @@ Models represent the core data entities in the FlexFi platform and are used by s
 - **User.ts**: Defines the user schema with authentication methods, personal details, wallet information, and KYC status.
 - **Wallet.ts**: Defines the wallet schema for tracking Solana wallets connected to or created by users.
 - **KYC.ts**: Defines the Know Your Customer document schema for storing verification information.
-- **Card.ts**: Defines the virtual payment card schema with details on card type, limits, and status. 
+- **Card.ts**: Defines the virtual payment card schema with details on card type, limits, and status.
+- **Notification.ts**: Defines the notification schema for storing user-specific notifications with type, message, and read status. 

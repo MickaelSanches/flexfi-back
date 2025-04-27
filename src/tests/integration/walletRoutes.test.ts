@@ -44,8 +44,8 @@ describe('Wallet API', () => {
       .set('Authorization', `Bearer ${authToken}`);
     
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('publicKey');
-    expect(res.body.type).toBe('created');
+    expect(res.body.data).toHaveProperty('publicKey');
+    expect(res.body.data.type).toBe('created');
   });
   
   it('should retrieve user wallets', async () => {
@@ -59,8 +59,8 @@ describe('Wallet API', () => {
       .set('Authorization', `Bearer ${authToken}`);
     
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('wallets');
-    expect(res.body.wallets.length).toBe(1);
+    expect(res.body.data).toBeInstanceOf(Array);
+    expect(res.body.data.length).toBe(1);
   });
   
   it('should require authentication', async () => {

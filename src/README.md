@@ -10,12 +10,14 @@ The FlexFi backend implements a modular architecture with clear separation of re
 2. **Service Layer** (services) - Contains core business logic and orchestrates operations
 3. **Data Layer** (models) - Manages data persistence and database interactions
 4. **Infrastructure Layer** (utils, config) - Provides cross-cutting utilities and configuration
+5. **Event System** (eventEmitter) - Implements an event-driven architecture for loosely coupled components
 
 This architecture promotes:
 - **Modularity**: Components can be developed and tested independently
 - **Maintainability**: Changes to one layer have minimal impact on others
 - **Testability**: Business logic can be tested without HTTP or database dependencies
 - **Separation of Concerns**: Each component has a distinct responsibility
+- **Loose Coupling**: Components communicate through events rather than direct dependencies
 
 ## Directory Structure
 
@@ -29,6 +31,6 @@ This architecture promotes:
 - **services/**: Contains business logic separated from controllers for better modularity.
 - **tests/**: Contains test files for the application.
 - **types/**: Contains TypeScript type definitions.
-- **utils/**: Contains utility functions used throughout the application.
+- **utils/**: Contains utility functions used throughout the application, including event emitters.
 - **validations/**: Contains validation schemas for request data.
 - **scripts/**: Contains utility scripts for various operations. 

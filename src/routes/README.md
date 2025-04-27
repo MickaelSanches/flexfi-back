@@ -16,4 +16,5 @@ The route structure follows RESTful principles where appropriate, with resources
 - **authRoutes.ts**: Routes for authentication operations including registration, login, and OAuth flows.
 - **walletRoutes.ts**: Routes for Solana wallet operations like creation, connection, and delegation.
 - **kycRoutes.ts**: Routes for KYC submission and status checking.
-- **cardRoutes.ts**: Routes for virtual card operations including selection, activation, and management. 
+- **cardRoutes.ts**: Routes for virtual card operations including selection, activation, and management.
+- **notificationRoutes.ts**: Routes for user notification operations like retrieving, marking as read, and getting unread counts. 

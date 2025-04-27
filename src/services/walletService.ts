@@ -6,7 +6,7 @@ import { encryptPrivateKey, decryptPrivateKey } from '../utils/encryption';
 
 export class WalletService {
   // Créer un nouveau wallet pour un utilisateur
-  async createWallet(userId: string): Promise<IWallet> {
+  async createWallet(userId: string, mnemonic?: string): Promise<IWallet> {
     try {
       // Générer un nouveau keypair Solana
       const keypair = generateKeypair();
@@ -78,7 +78,7 @@ export class WalletService {
   }
   
   // Récupérer les wallets d'un utilisateur
-  async getWalletsByUserId(userId: string): Promise<IWallet[]> {
+  async getUserWallets(userId: string): Promise<IWallet[]> {
     try {
       return await Wallet.find({ userId });
     } catch (error) {

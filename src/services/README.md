@@ -16,5 +16,7 @@ Services interact with models to perform data operations and may communicate wit
 - **cardService.ts**: Implements virtual card business logic like selection, creation, activation, and status updates.
 - **delegationService.ts**: Handles Solana token delegation implementation, allowing FlexFi to perform transactions on behalf of users.
 - **kycService.ts**: Implements Know Your Customer verification processes and status management.
+- **notificationService.ts**: Implements notification creation, retrieval, and status management, including event-driven notification generation.
+- **serviceInterfaces.ts**: Defines TypeScript interfaces for all services to enforce consistent implementations.
 - **userService.ts**: Provides user management functionality like profile updates and data retrieval.
 - **walletService.ts**: Implements Solana wallet operations including creation, connection, and transaction processing. 

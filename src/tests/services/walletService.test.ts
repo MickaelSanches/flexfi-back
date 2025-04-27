@@ -60,7 +60,7 @@ describe('WalletService', () => {
     await walletService.createWallet(testUserId);
     await walletService.connectWallet(testUserId, 'FakePublicKey123');
     
-    const wallets = await walletService.getWalletsByUserId(testUserId);
+    const wallets = await walletService.getUserWallets(testUserId);
     
     expect(wallets.length).toBe(2);
     expect(wallets[0].userId.toString()).toBe(testUserId);
