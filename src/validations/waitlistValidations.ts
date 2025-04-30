@@ -1,7 +1,7 @@
 import { body } from "express-validator";
 
 export const registerWaitlistUserValidation = [
-  // Informations de base
+  // Basic information
   body("email")
     .notEmpty()
     .withMessage("Email is required")
@@ -13,13 +13,11 @@ export const registerWaitlistUserValidation = [
     .isString()
     .withMessage("First name must be a string"),
   body("phoneNumber")
-    .notEmpty()
-    .withMessage("Phone number is required")
+    .optional()
     .matches(/^\+?[1-9]\d{1,14}$/)
     .withMessage("Invalid phone number format"),
   body("telegramOrDiscordId")
-    .notEmpty()
-    .withMessage("Telegram or Discord ID is required")
+    .optional()
     .isString()
     .withMessage("Telegram or Discord ID must be a string"),
   body("preferredLanguage")
@@ -28,7 +26,7 @@ export const registerWaitlistUserValidation = [
     .isString()
     .withMessage("Preferred language must be a string"),
 
-  // Localisation
+  // Location
   body("country")
     .notEmpty()
     .withMessage("Country is required")
@@ -39,40 +37,62 @@ export const registerWaitlistUserValidation = [
     .withMessage("State/Province is required")
     .isString()
     .withMessage("State/Province must be a string"),
-  body("ipCity")
-    .notEmpty()
-    .withMessage("City is required")
-    .isString()
-    .withMessage("City must be a string"),
-  body("deviceLocale")
-    .notEmpty()
-    .withMessage("Device locale is required")
-    .isString()
-    .withMessage("Device locale must be a string"),
 
-  // Démographie
+  // Demographics
   body("ageGroup")
     .notEmpty()
     .withMessage("Age group is required")
-    .isIn(["18-24", "25-34", "35-44", "45-54", "55+"])
+    .isIn(["18-29", "30-44", "45-59", "60+"])
     .withMessage("Invalid age group"),
   body("employmentStatus")
     .notEmpty()
     .withMessage("Employment status is required")
-    .isIn(["employed", "unemployed", "student", "retired"])
+    .isIn([
+      "Employed – Full-time",
+      "Employed – Part-time",
+      "Self-employed / Freelancer",
+      "Entrepreneur / Business Owner",
+      "Student",
+      "Intern / Apprentice",
+      "Unemployed – Seeking work",
+      "Unemployed – Not seeking work",
+      "Retired",
+      "Homemaker / Caregiver",
+      "Gig Worker / Platform Worker",
+      "Informal Sector Worker",
+      "Government / Public Sector Employee",
+      "Other",
+    ])
     .withMessage("Invalid employment status"),
   body("monthlyIncome")
     .notEmpty()
     .withMessage("Monthly income is required")
-    .isIn(["<1000", "1000-3000", "3000-5000", ">5000"])
+    .isIn([
+      "Less than $1,500",
+      "$1,500 – $1,999",
+      "$2,000 – $2,999",
+      "$3,000 – $4,999",
+      "$5,000 – $9,999",
+      "$10,000 or more",
+    ])
     .withMessage("Invalid monthly income range"),
   body("educationLevel")
     .notEmpty()
     .withMessage("Education level is required")
-    .isIn(["high_school", "bachelor", "master", "phd", "other"])
+    .isIn([
+      "No formal education",
+      "Primary school / Elementary education",
+      "Secondary school / High school diploma",
+      "Vocational / Technical training",
+      "Some college / University (no degree yet)",
+      "Bachelor's degree (BA, BS, etc.)",
+      "Master's degree (MA, MSc, MBA, etc.)",
+      "Doctorate / PhD",
+      "Other",
+    ])
     .withMessage("Invalid education level"),
 
-  // Informations financières
+  // Financial information
   body("hasCreditCard")
     .notEmpty()
     .withMessage("Credit card status is required")
@@ -84,29 +104,69 @@ export const registerWaitlistUserValidation = [
     .isArray()
     .withMessage("BNPL services must be an array"),
   body("bnplServices.*")
-    .isString()
-    .withMessage("Each BNPL service must be a string"),
+    .isIn([
+      "Klarna",
+      "Afterpay",
+      "Affirm",
+      "Zip (Quadpay)",
+      "Sezzle",
+      "Alma",
+      "Oney",
+      "Nelo",
+      "Kueski Pay",
+      "Mercado Crédito",
+      "Aplazo",
+      "Other",
+      "None",
+    ])
+    .withMessage("Invalid BNPL service"),
   body("avgOnlineSpend")
     .notEmpty()
     .withMessage("Average online spend is required")
-    .isIn(["<100", "100-500", "500-1000", ">1000"])
+    .isIn([
+      "Less than $50",
+      "$50 – $99",
+      "$100 – $199",
+      "$200 – $399",
+      "$400 – $699",
+      "$700 – $999",
+      "$1,000 – $1,499",
+      "$1,500 – $1,999",
+      "$2,000 or more",
+    ])
     .withMessage("Invalid average online spend range"),
 
   // Crypto
   body("cryptoLevel")
     .notEmpty()
     .withMessage("Crypto level is required")
-    .isIn(["beginner", "intermediate", "advanced"])
+    .isIn(["Zero", "Beginner", "Intermediate", "Active User", "Crypto Native"])
     .withMessage("Invalid crypto level"),
   body("walletType")
     .notEmpty()
     .withMessage("Wallet type is required")
-    .isIn(["hot", "cold", "none"])
+    .isIn([
+      "Phantom",
+      "Solflare",
+      "Jupiter",
+      "Backpack",
+      "Magic Eden",
+      "Trust Wallet",
+      "Metamask",
+      "Rabby Wallet",
+      "Uniswap",
+      "Other",
+    ])
     .withMessage("Invalid wallet type"),
   body("portfolioSize")
     .notEmpty()
     .withMessage("Portfolio size is required")
-    .isIn(["<1000", "1000-10000", "10000-50000", ">50000"])
+    .isIn([
+      "Less than $1,000",
+      "$1,000 – $9,999",
+      "$10,000 – $49,999",
+      "$50,000 or more",
+    ])
     .withMessage("Invalid portfolio size"),
   body("favoriteChains")
     .notEmpty()
@@ -114,35 +174,56 @@ export const registerWaitlistUserValidation = [
     .isArray()
     .withMessage("Favorite chains must be an array"),
   body("favoriteChains.*")
-    .isString()
-    .withMessage("Each favorite chain must be a string"),
+    .isIn([
+      "Solana",
+      "Ethereum",
+      "Binance Smart Chain (BSC)",
+      "Polygon",
+      "Avalanche",
+      "Arbitrum",
+      "Optimism",
+      "Base",
+      "Fantom",
+      "Near",
+      "Cosmos",
+      "Cardano",
+      "Bitcoin",
+      "Other",
+    ])
+    .withMessage("Invalid favorite chain"),
   body("publicWallet")
-    .notEmpty()
-    .withMessage("Public wallet is required")
+    .optional()
     .isString()
     .withMessage("Public wallet must be a string"),
 
-  // Comportement d'achat
+  // Purchase behavior
   body("mainReason")
     .notEmpty()
     .withMessage("Main reason is required")
-    .isIn(["convenience", "rewards", "budgeting", "other"])
+    .isIn([
+      "Buy Now, Pay Later (BNPL) with crypto",
+      "Earn yield or rewards on purchases",
+      "Use a crypto-powered payment card",
+      "Get early access to FlexFi features",
+      "Access financial services without a bank",
+      "Join a crypto-native financial community",
+      "Receive cashback",
+      "Learn about FlexFi / stay informed",
+      "Other",
+    ])
     .withMessage("Invalid main reason"),
   body("firstPurchase")
-    .notEmpty()
-    .withMessage("First purchase is required")
-    .isIn(["<100", "100-500", "500-1000", ">1000"])
-    .withMessage("Invalid first purchase range"),
+    .optional()
+    .isString()
+    .withMessage("First purchase must be a string"),
 
   // Marketing
   body("referralCodeUsed")
-    .notEmpty()
-    .withMessage("Referral code is required")
+    .optional()
     .isString()
     .withMessage("Referral code must be a string"),
   body("userReferralCode")
-    .notEmpty()
-    .withMessage("User referral code is required")
+    .optional()
     .isString()
     .withMessage("User referral code must be a string"),
   body("utmSource")
@@ -166,26 +247,14 @@ export const registerWaitlistUserValidation = [
     .isString()
     .withMessage("Landing variant must be a string"),
 
-  // Informations techniques
-  body("deviceType")
-    .notEmpty()
-    .withMessage("Device type is required")
-    .isIn(["mobile", "desktop", "tablet"])
-    .withMessage("Invalid device type"),
-  body("browser")
-    .notEmpty()
-    .withMessage("Browser is required")
-    .isString()
-    .withMessage("Browser must be a string"),
-
-  // Métriques
+  // Metrics
   body("timeToCompletionSeconds")
     .notEmpty()
     .withMessage("Time to completion is required")
     .isInt({ min: 0 })
     .withMessage("Time to completion must be a positive integer"),
 
-  // Consentements
+  // Consents
   body("consentMarketing")
     .notEmpty()
     .withMessage("Marketing consent is required")
@@ -196,8 +265,18 @@ export const registerWaitlistUserValidation = [
     .withMessage("Adult consent is required")
     .isBoolean()
     .withMessage("Adult consent must be a boolean"),
+  body("consent_data_sharing")
+    .notEmpty()
+    .withMessage("Data sharing consent is required")
+    .isBoolean()
+    .withMessage("Data sharing consent must be a boolean"),
+  body("consent_data_sharing_date")
+    .notEmpty()
+    .withMessage("Data sharing consent date is required")
+    .isISO8601()
+    .withMessage("Data sharing consent date must be a valid ISO date"),
 
-  // Expérience
+  // Experience
   body("experienceBnplRating")
     .notEmpty()
     .withMessage("BNPL experience rating is required")

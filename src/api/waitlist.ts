@@ -6,20 +6,20 @@ import { registerWaitlistUserValidation } from "../validations/waitlistValidatio
 
 const router = Router();
 
-// Route pour enregistrer un utilisateur dans la waitlist
+// Register a new user in the waitlist
 router.post(
   "/",
   validate(registerWaitlistUserValidation),
-  waitlistController.registerUser
+  waitlistController.registerWaitlistUser
 );
 
-// Route pour retourner le nombre total d'utilisateurs dans la waitlist
+// Get total number of users in the waitlist
 router.get("/count", waitlistController.getWaitlistCount);
 
-// Route pour récupérer les parrainages liés à un code
+// Get referrals count for a specific code
 router.get("/referral/:code", waitlistController.getReferralCount);
 
-// Route pour exporter les utilisateurs de la waitlist (admin uniquement)
+// Export waitlist users (admin only)
 router.get("/export", adminOnly, waitlistController.exportWaitlist);
 
 export default router;

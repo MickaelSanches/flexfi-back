@@ -1,60 +1,65 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import WaitlistUser, { IWaitlistUser } from "../models/WaitlistUser";
-import { AppError, ConflictError, InternalError } from "../utils/AppError";
+import WaitlistUser, {
+  IWaitlistUser,
+  WaitlistFormData,
+} from "../models/WaitlistUser";
+import { InternalError } from "../utils/AppError";
 
 dotenv.config();
 
+// Directory to store CSV files
+const EXPORT_DIR = path.join(__dirname, "../../exports");
+
+// Function to create a simple CSV
+function createCsv(headers: string[], data: any[]): string {
+  const headerRow = headers.join(",");
+  const rows = data.map((row) =>
+    headers
+      .map((header) => {
+        const value = row[header] || "";
+        // If value contains a comma, wrap it in quotes
+        return typeof value === "string" && value.includes(",")
+          ? `"${value}"`
+          : value;
+      })
+      .join(",")
+  );
+
+  return [headerRow, ...rows].join("\n");
+}
+
 export class WaitlistService {
-  private EXPORT_DIR: string;
-
-  constructor() {
-    this.EXPORT_DIR =
-      process.env.EXPORT_DIR || path.join(__dirname, "../../exports");
-  }
-
-  // Enregistrer un utilisateur dans la waitlist
-  async registerUser(userData: Partial<IWaitlistUser>): Promise<IWaitlistUser> {
+  // Register a new user in the waitlist
+  async registerUser(userData: WaitlistFormData): Promise<IWaitlistUser> {
     try {
-      // vérifier si l'utilisateur est déjà dans la waitlist
-      const existingUser = await WaitlistUser.findOne({
-        email: userData.email,
+      const newUser = new WaitlistUser({
+        ...userData,
+        signupTimestamp: new Date(),
       });
-      if (existingUser) {
-        throw ConflictError("User already registered in the waitlist");
-      }
-      const newWaitlistUser = new WaitlistUser(userData);
-      await newWaitlistUser.save();
-      return newWaitlistUser;
-    } catch (error) {
-      console.error("Error registering user:", error);
-      if (error instanceof AppError) throw error;
-      if (error instanceof Error) {
-        throw InternalError(`Failed to register user: ${error.message}`);
-      }
-      throw InternalError("Failed to register user");
+
+      return await newUser.save();
+    } catch (error: any) {
+      throw error;
     }
   }
 
-  // Retourner le nombre total d'utilisateurs dans la waitlist
+  // Get total number of users in the waitlist
   async getWaitlistCount(): Promise<number> {
     try {
-      const count = await WaitlistUser.countDocuments();
-      return count;
-    } catch (error: unknown) {
-      console.error("Error fetching waitlist count:", error);
-      if (error instanceof Error) {
-        throw InternalError(`Failed to fetch waitlist count: ${error.message}`);
-      }
-      throw InternalError("Failed to fetch waitlist count");
+      return await WaitlistUser.countDocuments();
+    } catch (error) {
+      throw InternalError("Failed to get waitlist count");
     }
   }
 
-  // Récupérer le nombre de parrainages liés à un code
+  // Get number of referrals linked to a code
   async getReferralCount(referralCode: string): Promise<number> {
     try {
-      const count = await WaitlistUser.countDocuments({ referralCode });
+      const count = await WaitlistUser.countDocuments({
+        userReferralCode: referralCode,
+      });
       return count;
     } catch (error: unknown) {
       console.error("Error fetching referral count:", error);
@@ -65,37 +70,18 @@ export class WaitlistService {
     }
   }
 
-  // Fonction pour créer un fichier CSV
-  private createCsv(headers: string[], data: any[]): string {
-    const headerRow = headers.join(",");
-    const rows = data.map((row) =>
-      headers
-        .map((header) => {
-          const value = row[header as keyof IWaitlistUser] || "";
-          return typeof value === "string" && value.includes(",")
-            ? `"${value}"`
-            : value;
-        })
-        .join(",")
-    );
-
-    return [headerRow, ...rows].join("\n");
-  }
-
-  // Exporter les utilisateurs de la waitlist en CSV
+  // Export waitlist to CSV file
   async exportWaitlistToCSV(): Promise<string> {
     try {
-      // S'assurer que le dossier d'export existe
-      if (!fs.existsSync(this.EXPORT_DIR)) {
-        fs.mkdirSync(this.EXPORT_DIR, { recursive: true });
+      if (!fs.existsSync(EXPORT_DIR)) {
+        fs.mkdirSync(EXPORT_DIR, { recursive: true });
       }
 
-      // Récupérer les utilisateurs de la waitlist depuis la base de données
-      const waitlistUsers = await WaitlistUser.find().lean<IWaitlistUser[]>();
+      const users = await WaitlistUser.find().lean<IWaitlistUser[]>();
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filePath = path.join(EXPORT_DIR, `waitlist_${dateStr}.csv`);
 
-      // Définir les en-têtes du fichier CSV
       const headers = [
-        "id",
         "email",
         "firstName",
         "phoneNumber",
@@ -131,69 +117,60 @@ export class WaitlistService {
         "timeToCompletionSeconds",
         "consentMarketing",
         "consentAdult",
+        "consent_data_sharing",
+        "consent_data_sharing_date",
         "experienceBnplRating",
-        "createdAt",
-        "updatedAt",
       ];
 
-      // Formater les données pour correspondre aux en-têtes
-      const formattedData = waitlistUsers.map((user) => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        phoneNumber: user.phoneNumber,
-        telegramOrDiscordId: user.telegramOrDiscordId,
-        preferredLanguage: user.preferredLanguage,
-        country: user.country,
-        stateProvince: user.stateProvince,
-        ipCity: user.ipCity,
-        deviceLocale: user.deviceLocale,
-        ageGroup: user.ageGroup,
-        employmentStatus: user.employmentStatus,
-        monthlyIncome: user.monthlyIncome,
-        educationLevel: user.educationLevel,
-        hasCreditCard: user.hasCreditCard ? "Yes" : "No",
-        bnplServices: user.bnplServices.join(", "),
-        avgOnlineSpend: user.avgOnlineSpend,
-        cryptoLevel: user.cryptoLevel,
-        walletType: user.walletType,
-        portfolioSize: user.portfolioSize,
-        favoriteChains: user.favoriteChains.join(", "),
-        publicWallet: user.publicWallet,
-        mainReason: user.mainReason,
-        firstPurchase: user.firstPurchase,
-        referralCodeUsed: user.referralCodeUsed,
-        userReferralCode: user.userReferralCode,
-        utmSource: user.utmSource,
-        utmMedium: user.utmMedium,
-        utmCampaign: user.utmCampaign,
-        landingVariant: user.landingVariant,
-        deviceType: user.deviceType,
-        browser: user.browser,
-        signupTimestamp: user.signupTimestamp.toISOString(),
-        timeToCompletionSeconds: user.timeToCompletionSeconds.toString(),
-        consentMarketing: user.consentMarketing ? "Yes" : "No",
-        consentAdult: user.consentAdult ? "Yes" : "No",
-        experienceBnplRating: user.experienceBnplRating.toString(),
-      }));
+      const formattedData = users.map((user) => {
+        const formattedUser: Record<string, string> = {};
 
-      // Générer le contenu CSV
-      const csvData = this.createCsv(headers, formattedData);
+        headers.forEach((header) => {
+          formattedUser[header] = "";
+        });
 
-      // Définir le chemin du fichier CSV
-      const filePath = path.join(this.EXPORT_DIR, `waitlist_${Date.now()}.csv`);
+        if (user.bnplServices)
+          formattedUser.bnplServices = user.bnplServices.join(", ");
+        if (user.favoriteChains)
+          formattedUser.favoriteChains = user.favoriteChains.join(", ");
+        if (user.signupTimestamp)
+          formattedUser.signupTimestamp = user.signupTimestamp.toISOString();
+        if (user.consent_data_sharing_date)
+          formattedUser.consent_data_sharing_date =
+            user.consent_data_sharing_date.toISOString();
+        if (user.timeToCompletionSeconds)
+          formattedUser.timeToCompletionSeconds =
+            user.timeToCompletionSeconds.toString();
+        if (user.experienceBnplRating)
+          formattedUser.experienceBnplRating =
+            user.experienceBnplRating.toString();
 
-      // Écrire les données dans le fichier CSV
+        Object.entries(user).forEach(([key, value]) => {
+          if (
+            ![
+              "bnplServices",
+              "favoriteChains",
+              "signupTimestamp",
+              "consent_data_sharing_date",
+              "timeToCompletionSeconds",
+              "experienceBnplRating",
+              "_id",
+              "__v",
+              "createdAt",
+              "updatedAt",
+            ].includes(key)
+          ) {
+            formattedUser[key] = value?.toString() || "";
+          }
+        });
+
+        return formattedUser;
+      });
+
+      const csvData = createCsv(headers, formattedData);
       fs.writeFileSync(filePath, csvData);
-
       return filePath;
-    } catch (error: unknown) {
-      console.error("Error exporting waitlist to CSV:", error);
-      if (error instanceof Error) {
-        throw InternalError(
-          `Failed to export waitlist to CSV: ${error.message}`
-        );
-      }
+    } catch (error) {
       throw InternalError("Failed to export waitlist to CSV");
     }
   }

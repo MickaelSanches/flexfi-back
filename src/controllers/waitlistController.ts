@@ -1,11 +1,44 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import fs from "fs";
+import { WaitlistFormData } from "../models/WaitlistUser";
 import waitlistService from "../services/waitlistService";
+import { ConflictError } from "../utils/AppError";
 
 export class WaitlistController {
-  // Enregistrer un utilisateur dans la waitlist
-  async registerUser(req: Request, res: Response): Promise<void> {
+  // Register a new user in the waitlist
+  async registerWaitlistUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const userData = req.body;
+      // Log headers for technical information
+      console.log("Request Headers:", {
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"],
+        device: req.headers["sec-ch-ua-platform"],
+        browser: req.headers["sec-ch-ua"],
+        language: req.headers["accept-language"],
+      });
+
+      // Log received data
+      console.log("Request Body:", req.body);
+
+      const userData: WaitlistFormData = {
+        ...req.body,
+        // Add technical information from headers
+        deviceType: req.headers["sec-ch-ua-platform"]?.toString() || "desktop",
+        browser: req.headers["user-agent"]?.toString() || "unknown",
+        ipCity:
+          req.headers["x-forwarded-for"]?.toString() ||
+          req.socket.remoteAddress?.toString() ||
+          "",
+        deviceLocale: req.headers["accept-language"]?.toString() || "en-US",
+        // Consents are now managed by the frontend
+        consent_data_sharing: req.body.consent_data_sharing,
+        consent_data_sharing_date: new Date(req.body.consent_data_sharing_date),
+      };
+
       const newWaitlistUser = await waitlistService.registerUser(userData);
 
       res.status(201).json({
@@ -13,26 +46,21 @@ export class WaitlistController {
         data: newWaitlistUser,
       });
     } catch (error: any) {
-      // Vérifier si c'est une erreur de duplication MongoDB
-      if (error.code === 11000 && error.keyPattern?.email) {
-        res.status(400).json({
-          status: "error",
-          message: "This email is already in use",
-        });
-        return;
+      console.error("Error in registerWaitlistUser:", error);
+      if (error.code === 11000) {
+        next(ConflictError("Email already exists"));
+      } else {
+        next(error);
       }
-
-      // Pour les autres erreurs
-      console.error("Error registering user:", error);
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while registering the user",
-      });
     }
   }
 
-  // Retourner le nombre total d'utilisateurs dans la waitlist
-  async getWaitlistCount(req: Request, res: Response): Promise<void> {
+  // Get total number of users in the waitlist
+  async getWaitlistCount(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const count = await waitlistService.getWaitlistCount();
 
@@ -41,16 +69,16 @@ export class WaitlistController {
         data: { count },
       });
     } catch (error) {
-      console.error("Error fetching waitlist count:", error);
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while fetching the waitlist count",
-      });
+      next(error);
     }
   }
 
-  // Récupérer le nombre de parrainages liés à un code
-  async getReferralCount(req: Request, res: Response): Promise<void> {
+  // Get number of referrals linked to a code
+  async getReferralCount(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const { code } = req.params;
       const referrals = await waitlistService.getReferralCount(code);
@@ -60,37 +88,43 @@ export class WaitlistController {
         data: { code, referrals },
       });
     } catch (error) {
-      console.error("Error fetching referrals:", error);
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while fetching referrals",
-      });
+      next(error);
     }
   }
 
-  // Exporter les utilisateurs de la waitlist en CSV
-  async exportWaitlist(req: Request, res: Response): Promise<void> {
+  // Export waitlist users to CSV
+  async exportWaitlist(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    let csvFilePath: string | null = null;
     try {
-      const csvFilePath = await waitlistService.exportWaitlistToCSV();
-
-      // Extraire le nom du fichier depuis le chemin
+      csvFilePath = await waitlistService.exportWaitlistToCSV();
       const fileName = csvFilePath.split("/").pop() || "waitlist.csv";
 
       res.download(csvFilePath, fileName, (err) => {
+        // Clean up file after sending or in case of error
+        if (csvFilePath && fs.existsSync(csvFilePath)) {
+          fs.unlinkSync(csvFilePath);
+        }
+
         if (err) {
           console.error("Error sending file:", err);
-          res.status(500).json({
-            status: "error",
-            message: "Failed to download the file",
-          });
+          if (!res.headersSent) {
+            res.status(500).json({
+              status: "error",
+              message: "Failed to download the file",
+            });
+          }
         }
       });
     } catch (error) {
-      console.error("Error exporting waitlist:", error);
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while exporting the waitlist",
-      });
+      // Clean up file in case of error
+      if (csvFilePath && fs.existsSync(csvFilePath)) {
+        fs.unlinkSync(csvFilePath);
+      }
+      next(error);
     }
   }
 }
