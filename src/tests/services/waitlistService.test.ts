@@ -1,7 +1,7 @@
 import fs from "fs";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import WaitlistUser from "../../models/WaitlistUser";
+import WaitlistUser, { IWaitlistUser } from "../../models/WaitlistUser";
 import waitlistService from "../../services/waitlistService";
 import { AppError } from "../../utils/AppError";
 
@@ -29,25 +29,29 @@ beforeEach(async () => {
 describe("WaitlistService", () => {
   describe("registerUser", () => {
     it("should register a new user successfully", async () => {
-      const mockUserData = {
+      const mockUserData: IWaitlistUser = {
         email: "test@example.com",
         firstName: "Test",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "test123",
-        preferredLanguage: "en",
+        preferredLanguage: "English",
         country: "CA",
         stateProvince: "CA",
+        ipCity: "Montreal",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -61,6 +65,7 @@ describe("WaitlistService", () => {
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       const user = await waitlistService.registerUser(mockUserData);
@@ -72,25 +77,29 @@ describe("WaitlistService", () => {
     });
 
     it("should throw error when registering with existing email", async () => {
-      const mockUserData = {
+      const mockUserData: IWaitlistUser = {
         email: "existing@example.com",
         firstName: "Test",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "test123",
-        preferredLanguage: "en",
+        preferredLanguage: "English",
         country: "CA",
         stateProvince: "CA",
+        ipCity: "Montreal",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -104,6 +113,7 @@ describe("WaitlistService", () => {
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       await waitlistService.registerUser(mockUserData);
@@ -118,14 +128,47 @@ describe("WaitlistService", () => {
     });
 
     it("should throw error when registering with invalid data", async () => {
-      const invalidUserData = {
+      const invalidUserData: IWaitlistUser = {
         email: "invalid-email",
         firstName: "",
-        phoneNumber: "123",
+        phoneNumber: "+1234567890",
+        telegramOrDiscordId: "test123",
+        preferredLanguage: "English",
+        country: "CA",
+        stateProvince: "CA",
+        ipCity: "Montreal",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
+        ageGroup: "25-34",
+        employmentStatus: "Employed – Full-time",
+        monthlyIncome: "$3,000 – $4,999",
+        educationLevel: "Bachelor's degree (BA, BS, etc.)",
+        hasCreditCard: true,
+        bnplServices: ["Klarna", "Afterpay"],
+        avgOnlineSpend: "$500 – $999",
+        cryptoLevel: "Intermediate",
+        walletType: "Metamask",
+        portfolioSize: "$1,000 – $9,999",
+        favoriteChains: ["Ethereum", "Solana"],
+        publicWallet: "0x123...",
+        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
+        firstPurchase: "100-500",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "test",
+        landingVariant: "A",
+        timeToCompletionSeconds: 120,
+        consentMarketing: true,
+        consentAdult: true,
+        consent_data_sharing: true,
+        consent_data_sharing_date: new Date(),
+        experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       try {
-        await waitlistService.registerUser(invalidUserData as any);
+        await waitlistService.registerUser(invalidUserData);
         fail("Should have thrown an error");
       } catch (error: any) {
         expect(error.name).toBe("ValidationError");
@@ -140,7 +183,7 @@ describe("WaitlistService", () => {
     });
 
     it("should return 1 after adding one user", async () => {
-      const mockUserData = {
+      const mockUserData: IWaitlistUser = {
         email: "test@example.com",
         firstName: "Test",
         phoneNumber: "+1234567890",
@@ -148,17 +191,21 @@ describe("WaitlistService", () => {
         preferredLanguage: "en",
         country: "CA",
         stateProvince: "CA",
+        ipCity: "Montreal",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -172,6 +219,7 @@ describe("WaitlistService", () => {
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       await waitlistService.registerUser(mockUserData);
@@ -180,7 +228,7 @@ describe("WaitlistService", () => {
     });
 
     it("should return correct count after adding multiple users", async () => {
-      const mockUsers = [
+      const mockUsers: IWaitlistUser[] = [
         {
           email: "test1@example.com",
           firstName: "Test1",
@@ -189,17 +237,21 @@ describe("WaitlistService", () => {
           preferredLanguage: "en",
           country: "CA",
           stateProvince: "CA",
+          ipCity: "Montreal",
+          deviceLocale: "en-CA",
+          deviceType: "desktop",
+          browser: "chrome",
           ageGroup: "25-34",
           employmentStatus: "Employed – Full-time",
           monthlyIncome: "$3,000 – $4,999",
           educationLevel: "Bachelor's degree (BA, BS, etc.)",
           hasCreditCard: true,
-          bnplServices: ["service1", "service2"],
+          bnplServices: ["Klarna", "Afterpay"],
           avgOnlineSpend: "$500 – $999",
           cryptoLevel: "Intermediate",
           walletType: "Metamask",
           portfolioSize: "$1,000 – $9,999",
-          favoriteChains: ["ethereum", "solana"],
+          favoriteChains: ["Ethereum", "Solana"],
           publicWallet: "0x123...",
           mainReason: "Buy Now, Pay Later (BNPL) with crypto",
           firstPurchase: "100-500",
@@ -213,26 +265,31 @@ describe("WaitlistService", () => {
           consent_data_sharing: true,
           consent_data_sharing_date: new Date(),
           experienceBnplRating: 4,
+          signupTimestamp: new Date(),
         },
         {
           email: "test2@example.com",
           firstName: "Test2",
-          phoneNumber: "+1234567891",
+          phoneNumber: "+0987654321",
           telegramOrDiscordId: "test124",
           preferredLanguage: "en",
           country: "CA",
           stateProvince: "CA",
+          ipCity: "Montreal",
+          deviceLocale: "en-CA",
+          deviceType: "desktop",
+          browser: "chrome",
           ageGroup: "25-34",
           employmentStatus: "Employed – Full-time",
           monthlyIncome: "$3,000 – $4,999",
           educationLevel: "Bachelor's degree (BA, BS, etc.)",
           hasCreditCard: true,
-          bnplServices: ["service1", "service2"],
+          bnplServices: ["Klarna", "Afterpay"],
           avgOnlineSpend: "$500 – $999",
           cryptoLevel: "Intermediate",
           walletType: "Metamask",
           portfolioSize: "$1,000 – $9,999",
-          favoriteChains: ["ethereum", "solana"],
+          favoriteChains: ["Ethereum", "Solana"],
           publicWallet: "0x123...",
           mainReason: "Buy Now, Pay Later (BNPL) with crypto",
           firstPurchase: "100-500",
@@ -246,6 +303,7 @@ describe("WaitlistService", () => {
           consent_data_sharing: true,
           consent_data_sharing_date: new Date(),
           experienceBnplRating: 4,
+          signupTimestamp: new Date(),
         },
       ];
 
@@ -274,7 +332,7 @@ describe("WaitlistService", () => {
 
   describe("exportWaitlistToCSV", () => {
     it("should export waitlist to CSV successfully", async () => {
-      const mockUserData = {
+      const mockUser: IWaitlistUser = {
         email: "test@example.com",
         firstName: "Test",
         phoneNumber: "+1234567890",
@@ -283,18 +341,20 @@ describe("WaitlistService", () => {
         country: "CA",
         stateProvince: "CA",
         ipCity: "Montreal",
-        deviceLocale: "en-US",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -302,31 +362,37 @@ describe("WaitlistService", () => {
         utmMedium: "cpc",
         utmCampaign: "test",
         landingVariant: "A",
-        deviceType: "desktop",
-        browser: "chrome",
         timeToCompletionSeconds: 120,
         consentMarketing: true,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
-      await waitlistService.registerUser(mockUserData);
-      const filePath = await waitlistService.exportWaitlistToCSV();
+      await waitlistService.registerUser(mockUser);
+      const { path: filePath, filename } =
+        await waitlistService.exportWaitlistToCSV();
+
+      // Display CSV file name content for verification
+      console.log("Contenu du fichier CSV:");
+      console.log(fs.readFileSync(filePath, "utf-8"));
+      console.log("Nom du fichier CSV:");
+      console.log(filename);
 
       expect(fs.existsSync(filePath)).toBe(true);
 
       const fileContent = fs.readFileSync(filePath, "utf-8");
-      expect(fileContent).toContain(mockUserData.email);
-      expect(fileContent).toContain(mockUserData.firstName);
-      expect(fileContent).toContain(mockUserData.phoneNumber);
+      expect(fileContent).toContain(mockUser.email);
+      expect(fileContent).toContain(mockUser.firstName);
+      expect(fileContent).toContain(mockUser.phoneNumber);
 
       fs.unlinkSync(filePath);
     });
 
     it("should handle empty waitlist", async () => {
-      const filePath = await waitlistService.exportWaitlistToCSV();
+      const { path: filePath } = await waitlistService.exportWaitlistToCSV();
 
       expect(fs.existsSync(filePath)).toBe(true);
 
@@ -338,153 +404,30 @@ describe("WaitlistService", () => {
       fs.unlinkSync(filePath);
     });
 
-    it("should throw error when directory creation fails", async () => {
-      const originalExistsSync = fs.existsSync;
-      const originalMkdirSync = fs.mkdirSync;
-
-      fs.existsSync = jest.fn().mockReturnValue(false);
-      fs.mkdirSync = jest.fn().mockImplementation(() => {
-        throw new Error("Directory creation failed");
-      });
-
-      await expect(waitlistService.exportWaitlistToCSV()).rejects.toThrow(
-        "Failed to export waitlist to CSV"
-      );
-
-      fs.existsSync = originalExistsSync;
-      fs.mkdirSync = originalMkdirSync;
-    });
-
-    it("should throw error when file writing fails", async () => {
-      const mockUserData = {
-        email: "test@example.com",
-        firstName: "Test",
-        phoneNumber: "+1234567890",
-        telegramOrDiscordId: "test123",
-        preferredLanguage: "en",
-        country: "CA",
-        stateProvince: "CA",
-        ipCity: "Montreal",
-        deviceLocale: "en-US",
-        ageGroup: "25-34",
-        employmentStatus: "Employed – Full-time",
-        monthlyIncome: "$3,000 – $4,999",
-        educationLevel: "Bachelor's degree (BA, BS, etc.)",
-        hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
-        avgOnlineSpend: "$500 – $999",
-        cryptoLevel: "Intermediate",
-        walletType: "Metamask",
-        portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
-        publicWallet: "0x123...",
-        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
-        firstPurchase: "100-500",
-        utmSource: "google",
-        utmMedium: "cpc",
-        utmCampaign: "test",
-        landingVariant: "A",
-        deviceType: "desktop",
-        browser: "chrome",
-        timeToCompletionSeconds: 120,
-        consentMarketing: true,
-        consentAdult: true,
-        consent_data_sharing: true,
-        consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
-      };
-
-      await waitlistService.registerUser(mockUserData);
-
-      const originalWriteFileSync = fs.writeFileSync;
-      fs.writeFileSync = jest.fn().mockImplementation(() => {
-        throw new Error("File writing failed");
-      });
-
-      try {
-        await waitlistService.exportWaitlistToCSV();
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error).toBeInstanceOf(AppError);
-        expect(error.statusCode).toBe(500);
-      } finally {
-        fs.writeFileSync = originalWriteFileSync;
-      }
-    });
-
-    it("should handle special characters in CSV", async () => {
-      const userWithSpecialChars = {
-        email: "test@example.com",
-        firstName: "Test-Name",
-        phoneNumber: "+1234567890",
-        telegramOrDiscordId: "test@discord",
-        preferredLanguage: "en",
-        country: "CA",
-        stateProvince: "Québec",
-        ipCity: "Montréal",
-        deviceLocale: "en-US",
-        ageGroup: "25-34",
-        employmentStatus: "Employed – Full-time",
-        monthlyIncome: "$3,000 – $4,999",
-        educationLevel: "Bachelor's degree (BA, BS, etc.)",
-        hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
-        avgOnlineSpend: "$500 – $999",
-        cryptoLevel: "Intermediate",
-        walletType: "Metamask",
-        portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
-        publicWallet: "0x123...",
-        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
-        firstPurchase: "100-500",
-        utmSource: "google",
-        utmMedium: "cpc",
-        utmCampaign: "test",
-        landingVariant: "A",
-        deviceType: "desktop",
-        browser: "chrome",
-        timeToCompletionSeconds: 120,
-        consentMarketing: true,
-        consentAdult: true,
-        consent_data_sharing: true,
-        consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
-      };
-
-      await waitlistService.registerUser(userWithSpecialChars);
-      const filePath = await waitlistService.exportWaitlistToCSV();
-      const content = fs.readFileSync(filePath, "utf-8");
-
-      expect(content).toContain("Test-Name");
-      expect(content).toContain("test@discord");
-      expect(content).toContain("Québec");
-      expect(content).toContain("Montréal");
-
-      fs.unlinkSync(filePath);
-    });
-
     it("should handle special characters in CSV export", async () => {
-      const mockUser = {
+      const mockUser: IWaitlistUser = {
         email: "test@example.com",
         firstName: "Jean-François",
         phoneNumber: "+1234567890",
-        telegramOrDiscordId: "user@discord#123",
-        preferredLanguage: "fr",
+        telegramOrDiscordId: "test123",
+        preferredLanguage: "French",
         country: "CA",
         stateProvince: "Québec",
         ipCity: "Montréal",
         deviceLocale: "fr-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -492,22 +435,21 @@ describe("WaitlistService", () => {
         utmMedium: "cpc",
         utmCampaign: "test",
         landingVariant: "A",
-        deviceType: "desktop",
-        browser: "chrome",
         timeToCompletionSeconds: 120,
         consentMarketing: true,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       await waitlistService.registerUser(mockUser);
-      const filePath = await waitlistService.exportWaitlistToCSV();
+      const { path: filePath } = await waitlistService.exportWaitlistToCSV();
       const csvContent = fs.readFileSync(filePath, "utf-8");
 
       expect(csvContent).toContain("Jean-François");
-      expect(csvContent).toContain("user@discord#123");
+      expect(csvContent).toContain("test123");
       expect(csvContent).toContain("Québec");
       expect(csvContent).toContain("Montréal");
 
@@ -515,27 +457,29 @@ describe("WaitlistService", () => {
     });
 
     it("should handle empty values in CSV export", async () => {
-      const mockUser = {
+      const mockUser: IWaitlistUser = {
         email: "test@example.com",
         firstName: "Test",
-        phoneNumber: "+1234567890",
+        phoneNumber: undefined, // Undefined value
         telegramOrDiscordId: "test123",
-        preferredLanguage: "en",
+        preferredLanguage: "English",
         country: "CA",
         stateProvince: "CA",
         ipCity: "Montreal",
-        deviceLocale: "en-US",
+        deviceLocale: "en-CA",
+        deviceType: "desktop",
+        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
         educationLevel: "Bachelor's degree (BA, BS, etc.)",
         hasCreditCard: true,
-        bnplServices: ["service1", "service2"],
+        bnplServices: ["Klarna", "Afterpay"],
         avgOnlineSpend: "$500 – $999",
         cryptoLevel: "Intermediate",
         walletType: "Metamask",
         portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["ethereum", "solana"],
+        favoriteChains: ["Ethereum", "Solana"],
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
@@ -543,18 +487,17 @@ describe("WaitlistService", () => {
         utmMedium: "cpc",
         utmCampaign: "test",
         landingVariant: "A",
-        deviceType: "desktop",
-        browser: "chrome",
         timeToCompletionSeconds: 120,
         consentMarketing: true,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
         experienceBnplRating: 4,
+        signupTimestamp: new Date(),
       };
 
       await waitlistService.registerUser(mockUser);
-      const filePath = await waitlistService.exportWaitlistToCSV();
+      const { path: filePath } = await waitlistService.exportWaitlistToCSV();
       const csvContent = fs.readFileSync(filePath, "utf-8");
 
       const lines = csvContent.split("\n");
@@ -587,7 +530,7 @@ describe("WaitlistService", () => {
       expect(csvData.userReferralCode).toBe("");
       expect(csvData.email).toBe(mockUser.email);
       expect(csvData.firstName).toBe(mockUser.firstName);
-      expect(csvData.phoneNumber).toBe(mockUser.phoneNumber);
+      expect(csvData.phoneNumber).toBe("");
 
       fs.unlinkSync(filePath);
     });

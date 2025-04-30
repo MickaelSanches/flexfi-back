@@ -20,6 +20,8 @@ router.get("/count", waitlistController.getWaitlistCount);
 router.get("/referral/:code", waitlistController.getReferralCount);
 
 // Export waitlist users (admin only)
-router.get("/export", adminOnly, waitlistController.exportWaitlist);
+router.get("/export", adminOnly, (req, res, next) =>
+  waitlistController.exportWaitlist(req, res, next)
+);
 
 export default router;

@@ -1,10 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import WaitlistUser, {
-  IWaitlistUser,
-  WaitlistFormData,
-} from "../models/WaitlistUser";
+import WaitlistUser, { IWaitlistUser } from "../models/WaitlistUser";
 import { InternalError } from "../utils/AppError";
 
 dotenv.config();
@@ -32,13 +29,9 @@ function createCsv(headers: string[], data: any[]): string {
 
 export class WaitlistService {
   // Register a new user in the waitlist
-  async registerUser(userData: WaitlistFormData): Promise<IWaitlistUser> {
+  async registerUser(userData: IWaitlistUser): Promise<IWaitlistUser> {
     try {
-      const newUser = new WaitlistUser({
-        ...userData,
-        signupTimestamp: new Date(),
-      });
-
+      const newUser = new WaitlistUser(userData);
       return await newUser.save();
     } catch (error: any) {
       throw error;
@@ -58,7 +51,7 @@ export class WaitlistService {
   async getReferralCount(referralCode: string): Promise<number> {
     try {
       const count = await WaitlistUser.countDocuments({
-        userReferralCode: referralCode,
+        referralCodeUsed: referralCode,
       });
       return count;
     } catch (error: unknown) {
@@ -71,7 +64,7 @@ export class WaitlistService {
   }
 
   // Export waitlist to CSV file
-  async exportWaitlistToCSV(): Promise<string> {
+  async exportWaitlistToCSV(): Promise<{ path: string; filename: string }> {
     try {
       if (!fs.existsSync(EXPORT_DIR)) {
         fs.mkdirSync(EXPORT_DIR, { recursive: true });
@@ -79,7 +72,8 @@ export class WaitlistService {
 
       const users = await WaitlistUser.find().lean<IWaitlistUser[]>();
       const dateStr = new Date().toISOString().split("T")[0];
-      const filePath = path.join(EXPORT_DIR, `waitlist_${dateStr}.csv`);
+      const filename = `waitlist_${dateStr}.csv`;
+      const filePath = path.join(EXPORT_DIR, filename);
 
       const headers = [
         "email",
@@ -169,7 +163,7 @@ export class WaitlistService {
 
       const csvData = createCsv(headers, formattedData);
       fs.writeFileSync(filePath, csvData);
-      return filePath;
+      return { path: filePath, filename };
     } catch (error) {
       throw InternalError("Failed to export waitlist to CSV");
     }

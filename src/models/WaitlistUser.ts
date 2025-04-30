@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from "mongoose";
-
 export interface WaitlistFormData {
   email: string;
   firstName: string;
@@ -8,8 +7,6 @@ export interface WaitlistFormData {
   preferredLanguage: string;
   country: string;
   stateProvince: string;
-  ipCity?: string;
-  deviceLocale?: string;
   ageGroup: string;
   employmentStatus: string;
   monthlyIncome: string;
@@ -30,15 +27,15 @@ export interface WaitlistFormData {
   utmMedium: string;
   utmCampaign: string;
   landingVariant: string;
-  deviceType?: string;
-  browser?: string;
   timeToCompletionSeconds: number;
   consentMarketing: boolean;
   consentAdult: boolean;
+  consent_data_sharing: boolean;
+  consent_data_sharing_date: Date;
   experienceBnplRating: number;
 }
 
-export interface IWaitlistUser extends Document {
+export interface IWaitlistUser {
   email: string;
   firstName: string;
   phoneNumber?: string;
@@ -46,8 +43,8 @@ export interface IWaitlistUser extends Document {
   preferredLanguage: string;
   country: string;
   stateProvince: string;
-  ipCity?: string;
-  deviceLocale?: string;
+  ipCity: string;
+  deviceLocale: string;
   ageGroup: string;
   employmentStatus: string;
   monthlyIncome: string;
@@ -68,8 +65,8 @@ export interface IWaitlistUser extends Document {
   utmMedium: string;
   utmCampaign: string;
   landingVariant: string;
-  deviceType?: string;
-  browser?: string;
+  deviceType: string;
+  browser: string;
   signupTimestamp: Date;
   timeToCompletionSeconds: number;
   consentMarketing: boolean;
@@ -78,6 +75,9 @@ export interface IWaitlistUser extends Document {
   consent_data_sharing_date: Date;
   experienceBnplRating: number;
 }
+
+// Interface pour le document Mongoose
+export interface IWaitlistUserDocument extends IWaitlistUser, Document {}
 
 const WaitlistUserSchema: Schema = new Schema(
   {
@@ -88,8 +88,8 @@ const WaitlistUserSchema: Schema = new Schema(
     preferredLanguage: { type: String, required: true },
     country: { type: String, required: true },
     stateProvince: { type: String, required: true },
-    ipCity: { type: String, required: false },
-    deviceLocale: { type: String, required: false },
+    ipCity: { type: String, required: true },
+    deviceLocale: { type: String, required: true },
     ageGroup: { type: String, required: true },
     employmentStatus: { type: String, required: true },
     monthlyIncome: { type: String, required: true },
@@ -110,8 +110,8 @@ const WaitlistUserSchema: Schema = new Schema(
     utmMedium: { type: String, required: true },
     utmCampaign: { type: String, required: true },
     landingVariant: { type: String, required: true },
-    deviceType: { type: String, required: false },
-    browser: { type: String, required: false },
+    deviceType: { type: String, required: true },
+    browser: { type: String, required: true },
     signupTimestamp: { type: Date, default: Date.now, required: true },
     timeToCompletionSeconds: { type: Number, required: true },
     consentMarketing: { type: Boolean, required: true },
@@ -127,9 +127,7 @@ const WaitlistUserSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-WaitlistUserSchema.index({ email: 1 }, { unique: true });
-
-export default mongoose.model<IWaitlistUser>(
+export default mongoose.model<IWaitlistUserDocument>(
   "WaitlistUser",
   WaitlistUserSchema
 );
