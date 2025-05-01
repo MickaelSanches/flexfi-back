@@ -31,7 +31,11 @@ export class WaitlistService {
   // Register a new user in the waitlist
   async registerUser(userData: IWaitlistUser): Promise<IWaitlistUser> {
     try {
-      const newUser = new WaitlistUser(userData);
+      const referralCode = await this.generateUniqueReferralCode();
+      const newUser = new WaitlistUser({
+        ...userData,
+        userReferralCode: referralCode,
+      });
       return await newUser.save();
     } catch (error: any) {
       throw error;
@@ -167,6 +171,25 @@ export class WaitlistService {
     } catch (error) {
       throw InternalError("Failed to export waitlist to CSV");
     }
+  }
+
+  private generateReferralCode(): string {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return `FLEX-${code}`;
+  }
+
+  private async generateUniqueReferralCode(): Promise<string> {
+    let code = this.generateReferralCode();
+    let exists = await WaitlistUser.findOne({ userReferralCode: code });
+    while (exists) {
+      code = this.generateReferralCode();
+      exists = await WaitlistUser.findOne({ userReferralCode: code });
+    }
+    return code;
   }
 }
 
