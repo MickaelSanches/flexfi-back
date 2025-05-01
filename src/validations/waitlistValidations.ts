@@ -23,8 +23,8 @@ export const registerWaitlistUserValidation = [
   body("preferredLanguage")
     .notEmpty()
     .withMessage("Preferred language is required")
-    .isString()
-    .withMessage("Preferred language must be a string"),
+    .isIn(["English", "French", "Spanish", "Portuguese"])
+    .withMessage("Invalid preferred language"),
 
   // Location
   body("country")

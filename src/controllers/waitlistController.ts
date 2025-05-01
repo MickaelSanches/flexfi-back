@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
-import { WaitlistFormData } from "../models/WaitlistUser";
+import { IWaitlistUser } from "../models/WaitlistUser";
 import waitlistService from "../services/waitlistService";
 import { ConflictError } from "../utils/AppError";
 
@@ -12,19 +12,7 @@ export class WaitlistController {
     next: NextFunction
   ): Promise<void> {
     try {
-      // Log headers for technical information
-      console.log("Request Headers:", {
-        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
-        userAgent: req.headers["user-agent"],
-        device: req.headers["sec-ch-ua-platform"],
-        browser: req.headers["sec-ch-ua"],
-        language: req.headers["accept-language"],
-      });
-
-      // Log received data
-      console.log("Request Body:", req.body);
-
-      const userData: WaitlistFormData = {
+      const userData: IWaitlistUser = {
         ...req.body,
         // Add technical information from headers
         deviceType: req.headers["sec-ch-ua-platform"]?.toString() || "desktop",
@@ -34,9 +22,6 @@ export class WaitlistController {
           req.socket.remoteAddress?.toString() ||
           "",
         deviceLocale: req.headers["accept-language"]?.toString() || "en-US",
-        // Consents are now managed by the frontend
-        consent_data_sharing: req.body.consent_data_sharing,
-        consent_data_sharing_date: new Date(req.body.consent_data_sharing_date),
       };
 
       const newWaitlistUser = await waitlistService.registerUser(userData);
@@ -46,7 +31,6 @@ export class WaitlistController {
         data: newWaitlistUser,
       });
     } catch (error: any) {
-      console.error("Error in registerWaitlistUser:", error);
       if (error.code === 11000) {
         next(ConflictError("Email already exists"));
       } else {
@@ -100,17 +84,11 @@ export class WaitlistController {
   ): Promise<void> {
     let csvFilePath: string | null = null;
     try {
-      csvFilePath = await waitlistService.exportWaitlistToCSV();
-      const fileName = csvFilePath.split("/").pop() || "waitlist.csv";
+      const { path, filename } = await waitlistService.exportWaitlistToCSV();
+      csvFilePath = path;
 
-      res.download(csvFilePath, fileName, (err) => {
-        // Clean up file after sending or in case of error
-        if (csvFilePath && fs.existsSync(csvFilePath)) {
-          fs.unlinkSync(csvFilePath);
-        }
-
+      res.download(path, filename, (err) => {
         if (err) {
-          console.error("Error sending file:", err);
           if (!res.headersSent) {
             res.status(500).json({
               status: "error",
