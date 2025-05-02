@@ -6,6 +6,7 @@ export interface KYCService {
   getKYCStatus: (userId: string) => Promise<string>;
   updateKYCStatus: (kycId: string, status: string, reason?: string) => Promise<any>;
   mockKulipaResponse: (kycId: string, status: string, responseData?: any) => Promise<any>;
+  updateKYCFromWebhook: (providerReference: string, status: string, responseData?: any) => Promise<any>;
 }
 
 // Wallet Service interfaces
