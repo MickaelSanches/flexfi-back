@@ -91,6 +91,34 @@ export class KYCService {
     }
   }
   
+  // Traiter les mises à jour de statut KYC provenant du webhook Kulipa
+  async updateKYCFromWebhook(
+    providerReference: string,
+    status: 'approved' | 'rejected',
+    responseData: any = {}
+  ): Promise<IKYC | null> {
+    try {
+      // Trouver le KYC par sa référence provider
+      const kyc = await KYC.findOne({ providerReference });
+      
+      if (!kyc) {
+        throw new Error(`KYC with reference ${providerReference} not found`);
+      }
+      
+      // Mettre à jour le KYC
+      kyc.status = status;
+      kyc.responseData = responseData;
+      await kyc.save();
+      
+      // Mettre à jour le statut KYC de l'utilisateur
+      await userService.updateKYCStatus(kyc.userId.toString(), status);
+      
+      return kyc;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
   // Vérifier si un utilisateur a passé le KYC avec succès
   async hasApprovedKYC(userId: string): Promise<boolean> {
     try {

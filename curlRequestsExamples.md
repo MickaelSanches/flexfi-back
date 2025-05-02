@@ -124,6 +124,21 @@ curl -X GET http://localhost:3000/api/kyc/status \
   -H "Authorization: Bearer VOTRE_TOKEN_JWT"
 ```
 
+### Simuler un webhook Kulipa (pour le développement)
+```bash
+# Générer une signature valide (à des fins de test uniquement)
+# En production, la signature est générée par Kulipa
+PAYLOAD='{"reference":"KULIPA-123456789","status":"approved","verification_data":{"fullName":"John Doe"}}'
+WEBHOOK_SECRET='test-kulipa-webhook-secret'
+SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
+
+# Envoyer le webhook
+curl -X POST http://localhost:3000/api/kyc/webhook \
+  -H "Content-Type: application/json" \
+  -H "x-kulipa-signature: $SIGNATURE" \
+  -d "$PAYLOAD"
+```
+
 ## Cartes virtuelles
 
 ### Sélectionner un type de carte
