@@ -22,13 +22,6 @@ export class AuthService {
     deviceLocale?: string
   ): Promise<{ user: IUser; token: string }> {
     try {
-      // Vérification de la robustesse du mot de passe
-      if (!isPasswordStrong(password)) {
-        throw ConflictError(
-          "Password must be at least 12 characters long and include uppercase, lowercase, number, and special character."
-        );
-      }
-
       // Vérifier si l'utilisateur existe déjà
       const existingUser = await User.findOne({ email });
       if (existingUser) {
