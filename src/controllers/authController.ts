@@ -105,6 +105,7 @@ export class AuthController {
         kycStatus: user.kycStatus,
         selectedCard: user.selectedCard,
         formFullfilled: user.formFullfilled,
+        userReferralCode: user.userReferralCode,
       };
 
       // Logger la connexion réussie
