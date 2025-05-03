@@ -1,22 +1,144 @@
 # Services Directory
 
-This directory contains the core business logic of the application, implementing the service layer pattern. Services are separated from controllers to achieve:
+Ce répertoire contient la logique métier principale de l'application, implémentant le pattern de couche service. Les services sont séparés des controllers pour :
 
-- Separation of concerns, keeping business logic distinct from HTTP handling
-- Improved testability through smaller, focused functions with clear responsibilities
-- Better reusability of business logic across different controllers
-- Easier maintenance by centralizing domain-specific operations
-- Implementation of complex workflows and transactions
+- Séparer les responsabilités, en gardant la logique métier distincte de la gestion HTTP
+- Améliorer la testabilité via des fonctions plus petites et ciblées
+- Faciliter la réutilisation de la logique métier
+- Centraliser les opérations spécifiques au domaine
+- Implémenter des workflows et transactions complexes
 
-Services interact with models to perform data operations and may communicate with external systems like the Solana blockchain. They contain no HTTP-specific code, making them usable in different contexts (API, CLI, scheduled jobs).
+## Structure et Organisation
 
-## Files
+Chaque service suit une structure similaire :
 
-- **authService.ts**: Implements user authentication logic including token generation, verification, and OAuth processing.
-- **cardService.ts**: Implements virtual card business logic like selection, creation, activation, and status updates.
-- **delegationService.ts**: Handles Solana token delegation implementation, allowing FlexFi to perform transactions on behalf of users.
-- **kycService.ts**: Implements Know Your Customer verification processes and status management.
-- **notificationService.ts**: Implements notification creation, retrieval, and status management, including event-driven notification generation.
-- **serviceInterfaces.ts**: Defines TypeScript interfaces for all services to enforce consistent implementations.
-- **userService.ts**: Provides user management functionality like profile updates and data retrieval.
-- **walletService.ts**: Implements Solana wallet operations including creation, connection, and transaction processing. 
+1. Import des dépendances nécessaires
+2. Définition de la classe du service
+3. Méthodes publiques pour chaque opération métier
+4. Gestion des transactions et des erreurs
+5. Interaction avec les modèles et services externes
+
+## Services Disponibles
+
+### authService.ts
+
+Gère toute la logique d'authentification :
+
+- `register`: Création d'un nouvel utilisateur
+  - Génération du code de parrainage
+  - Hachage du mot de passe
+  - Création du token JWT
+- `login`: Authentification utilisateur
+  - Vérification des identifiants
+  - Génération du token JWT
+- `verifyToken`: Vérification des tokens JWT
+- `refreshToken`: Renouvellement des tokens
+
+### waitlistService.ts
+
+Gère la logique de la liste d'attente :
+
+- `registerWaitlistInfo`: Enregistrement des données waitlist
+  - Mise à jour des informations utilisateur
+  - Attribution des points (+20)
+  - Gestion des parrainages
+- `getWaitlistCount`: Comptage des utilisateurs
+- `getReferralCount`: Comptage des parrainages
+- `exportWaitlistData`: Export des données
+
+### walletService.ts
+
+Gère les opérations blockchain Solana :
+
+- `createWallet`: Création d'un nouveau wallet
+  - Génération des clés
+  - Enregistrement en base
+- `connectWallet`: Connexion d'un wallet existant
+- `verifyWallet`: Vérification de propriété
+- `getBalance`: Récupération du solde
+- `sendTransaction`: Envoi de transactions
+
+### kycService.ts
+
+Gère le processus KYC :
+
+- `submitKyc`: Soumission des documents
+  - Vérification des documents
+  - Mise à jour du statut
+- `getKycStatus`: Vérification du statut
+- `updateKycStatus`: Mise à jour du statut
+- `verifyDocuments`: Vérification des documents
+
+### cardService.ts
+
+Gère les cartes virtuelles :
+
+- `createCard`: Création d'une carte
+  - Génération des détails
+  - Activation initiale
+- `activateCard`: Activation d'une carte
+- `blockCard`: Blocage d'une carte
+- `getCardStatus`: Vérification du statut
+
+### notificationService.ts
+
+Gère les notifications :
+
+- `createNotification`: Création d'une notification
+- `getNotifications`: Récupération des notifications
+- `markAsRead`: Marquage comme lu
+- `getUnreadCount`: Comptage des non-lues
+
+## Bonnes Pratiques
+
+1. **Gestion des Transactions**
+
+   - Utiliser les sessions MongoDB
+   - Gérer les rollbacks
+   - Maintenir la cohérence des données
+
+2. **Gestion des Erreurs**
+
+   - Utiliser des classes d'erreur personnalisées
+   - Logger les erreurs appropriément
+   - Propager les erreurs aux controllers
+
+3. **Performance**
+
+   - Optimiser les requêtes MongoDB
+   - Utiliser les index appropriés
+   - Gérer le cache si nécessaire
+
+4. **Sécurité**
+   - Valider les entrées
+   - Gérer les permissions
+   - Protéger les données sensibles
+
+## Exemple de Structure de Service
+
+```typescript
+class ExampleService {
+  constructor(
+    private readonly model: Model,
+    private readonly externalService: ExternalService
+  ) {}
+
+  async createResource(data: CreateResourceDto): Promise<Resource> {
+    const session = await this.model.startSession();
+    try {
+      session.startTransaction();
+
+      const resource = await this.model.create([data], { session });
+      await this.externalService.process(resource);
+
+      await session.commitTransaction();
+      return resource;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+}
+```

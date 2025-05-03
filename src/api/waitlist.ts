@@ -6,7 +6,7 @@ import { registerWaitlistUserValidation } from "../validations/waitlistValidatio
 
 const router = Router();
 
-// Register a new user in the waitlist
+// Register a user in the waitlist
 router.post(
   "/",
   validate(registerWaitlistUserValidation),

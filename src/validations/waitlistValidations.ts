@@ -7,11 +7,6 @@ export const registerWaitlistUserValidation = [
     .withMessage("Email is required")
     .isEmail()
     .withMessage("Invalid email format"),
-  body("firstName")
-    .notEmpty()
-    .withMessage("First name is required")
-    .isString()
-    .withMessage("First name must be a string"),
   body("phoneNumber")
     .optional()
     .matches(/^\+?[1-9]\d{1,14}$/)
@@ -241,11 +236,6 @@ export const registerWaitlistUserValidation = [
     .withMessage("UTM campaign is required")
     .isString()
     .withMessage("UTM campaign must be a string"),
-  body("landingVariant")
-    .notEmpty()
-    .withMessage("Landing variant is required")
-    .isString()
-    .withMessage("Landing variant must be a string"),
 
   // Metrics
   body("timeToCompletionSeconds")
@@ -282,4 +272,11 @@ export const registerWaitlistUserValidation = [
     .withMessage("BNPL experience rating is required")
     .isInt({ min: 1, max: 5 })
     .withMessage("BNPL experience rating must be between 1 and 5"),
+
+  // Timestamp
+  body("signupTimeStamp")
+    .notEmpty()
+    .withMessage("Signup timestamp is required")
+    .isISO8601()
+    .withMessage("Signup timestamp must be a valid ISO date"),
 ];

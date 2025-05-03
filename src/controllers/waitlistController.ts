@@ -1,8 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
-import { IWaitlistUser } from "../models/WaitlistUser";
+import { IWaitlistUser } from "../models/User";
 import waitlistService from "../services/waitlistService";
-import { ConflictError } from "../utils/AppError";
 
 export class WaitlistController {
   // Register a new user in the waitlist
@@ -12,30 +11,32 @@ export class WaitlistController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const { email, ...formData } = req.body;
       const userData: IWaitlistUser = {
-        ...req.body,
-        // Add technical information from headers
-        deviceType: req.headers["sec-ch-ua-platform"]?.toString() || "desktop",
-        browser: req.headers["user-agent"]?.toString() || "unknown",
-        ipCity:
-          req.headers["x-forwarded-for"]?.toString() ||
-          req.socket.remoteAddress?.toString() ||
-          "",
-        deviceLocale: req.headers["accept-language"]?.toString() || "en-US",
+        email,
+        formData,
       };
 
-      const newWaitlistUser = await waitlistService.registerUser(userData);
+      const updatedUser = await waitlistService.registerWaitlistInfos(userData);
+
+      const userResponse = {
+        _id: updatedUser._id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        authMethod: updatedUser.authMethod,
+        wallets: updatedUser.wallets,
+        kycStatus: updatedUser.kycStatus,
+        formFullfilled: updatedUser.formFullfilled,
+        points: updatedUser.points,
+      };
 
       res.status(201).json({
         status: "success",
-        data: newWaitlistUser,
+        data: userResponse,
       });
     } catch (error: any) {
-      if (error.code === 11000) {
-        next(ConflictError("Email already exists"));
-      } else {
-        next(error);
-      }
+      next(error);
     }
   }
 

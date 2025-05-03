@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import userService from '../../services/userService';
-import User from '../../models/User';
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import userService from "../../services/userService";
+import { User } from "../../models/User";
 
 let mongoServer: MongoMemoryServer;
 
@@ -20,63 +20,63 @@ beforeEach(async () => {
   await User.deleteMany({});
 });
 
-describe('UserService', () => {
-  it('should create a new user', async () => {
+describe("UserService", () => {
+  it("should create a new user", async () => {
     // Créer un utilisateur pour le test
     const mockUser = new User({
-      email: 'test@example.com',
-      password: 'password123',
-      firstName: 'Test',
-      lastName: 'User',
-      authMethod: 'email'
+      email: "test@example.com",
+      password: "password123",
+      firstName: "Test",
+      lastName: "User",
+      authMethod: "email",
     });
-    
+
     await mockUser.save();
-    
+
     // Tester getUserById
     const foundUser = await userService.getUserById(mockUser._id.toString());
     expect(foundUser).not.toBeNull();
-    expect(foundUser?.email).toBe('test@example.com');
+    expect(foundUser?.email).toBe("test@example.com");
   });
-  
-  it('should get a user by email', async () => {
+
+  it("should get a user by email", async () => {
     // Créer un utilisateur pour le test
     const mockUser = new User({
-      email: 'test@example.com',
-      password: 'password123',
-      firstName: 'Test',
-      lastName: 'User',
-      authMethod: 'email'
+      email: "test@example.com",
+      password: "password123",
+      firstName: "Test",
+      lastName: "User",
+      authMethod: "email",
     });
-    
+
     await mockUser.save();
-    
+
     // Tester getUserByEmail
-    const foundUser = await userService.getUserByEmail('test@example.com');
+    const foundUser = await userService.getUserByEmail("test@example.com");
     expect(foundUser).not.toBeNull();
     expect(foundUser?._id.toString()).toBe(mockUser._id.toString());
   });
-  
-  it('should update a user', async () => {
+
+  it("should update a user", async () => {
     // Créer un utilisateur pour le test
     const mockUser = new User({
-      email: 'test@example.com',
-      password: 'password123',
-      firstName: 'Test',
-      lastName: 'User',
-      authMethod: 'email'
+      email: "test@example.com",
+      password: "password123",
+      firstName: "Test",
+      lastName: "User",
+      authMethod: "email",
     });
-    
+
     await mockUser.save();
-    
+
     // Tester updateUser
     const updatedUser = await userService.updateUser(mockUser._id.toString(), {
-      firstName: 'Updated',
-      lastName: 'Name'
+      firstName: "Updated",
+      lastName: "Name",
     });
-    
+
     expect(updatedUser).not.toBeNull();
-    expect(updatedUser?.firstName).toBe('Updated');
-    expect(updatedUser?.lastName).toBe('Name');
+    expect(updatedUser?.firstName).toBe("Updated");
+    expect(updatedUser?.lastName).toBe("Name");
   });
 });
