@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { IBasicUser, IUser } from "../models/User";
 import authService from "../services/authService";
+import userService from "../services/userService";
 import logger from "../utils/logger";
 
 export class AuthController {
@@ -298,6 +299,58 @@ export class AuthController {
       logger.error(`Error getting top referrals: ${error.message}`, {
         error: error.stack,
       });
+      next(error);
+    }
+  }
+
+  // Récupérer les points de l'utilisateur
+  async getUserPoints(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as any;
+      const userId = user?._id;
+      
+      if (!userId) {
+        res.status(401).json({ 
+          status: 'error', 
+          message: 'Unauthorized' 
+        });
+        return;
+      }
+      
+      const points = await userService.getUserPoints(userId.toString());
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          points
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Récupérer le rang de l'utilisateur
+  async getUserRank(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as any;
+      const userId = user?._id;
+      
+      if (!userId) {
+        res.status(401).json({ 
+          status: 'error', 
+          message: 'Unauthorized' 
+        });
+        return;
+      }
+      
+      const rankInfo = await userService.getUserRank(userId.toString());
+      
+      res.status(200).json({
+        status: 'success',
+        data: rankInfo
+      });
+    } catch (error) {
       next(error);
     }
   }

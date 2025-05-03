@@ -1,5 +1,6 @@
 import User, { IUser } from '../models/User';
 import mongoose from 'mongoose';
+import { AppError } from '../utils/AppError';
 
 export class UserService {
   // Récupérer un utilisateur par ID
@@ -114,6 +115,48 @@ export class UserService {
         { selectedCard: cardType },
         { new: true }
       );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Récupérer les points d'un utilisateur
+  async getUserPoints(userId: string): Promise<number> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+      return user.points || 0;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Récupérer le rang d'un utilisateur
+  async getUserRank(userId: string): Promise<{ rank: number, totalUsers: number, points: number }> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+      
+      // Récupérer le nombre d'utilisateurs ayant plus de points
+      const usersWithMorePoints = await User.countDocuments({
+        points: { $gt: user.points }
+      });
+      
+      // Le rang = nombre d'utilisateurs ayant plus de points + 1
+      const rank = usersWithMorePoints + 1;
+      
+      // Nombre total d'utilisateurs
+      const totalUsers = await User.countDocuments();
+      
+      return {
+        rank,
+        totalUsers,
+        points: user.points || 0
+      };
     } catch (error) {
       throw error;
     }
