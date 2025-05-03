@@ -32,12 +32,13 @@ export class WaitlistService {
   async registerWaitlistInfos(userData: IWaitlistUser): Promise<IUser> {
     try {
       const user = await User.findOne({ email: userData.email });
+      console.log("User found:", user);
 
       if (!user) {
         throw NotFoundError("User not found");
       }
 
-      if (user.formFullfilled) {
+      if (user.formFullfilled == true) {
         throw ConflictError("Form already submitted");
       }
 
