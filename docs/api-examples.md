@@ -7,6 +7,7 @@ Ce document contient des exemples de commandes curl pour tester l'API FlexFi. Ce
 2. [Gestion des wallets](#gestion-des-wallets)
 3. [Vérification KYC](#vérification-kyc)
 4. [Cartes virtuelles](#cartes-virtuelles)
+5. [LOI (Letter of Intent)](#loi)
 
 ## Authentification
 
@@ -188,3 +189,39 @@ curl -X GET http://localhost:3000/api/auth/me \
 ```
 
 Note: Cette méthode nécessite l'outil `jq` pour parser la réponse JSON.
+
+## LOI (Letter of Intent)
+
+### Submit LOI form
+
+```bash
+curl -X POST http://localhost:3000/api/loi \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "John Doe",
+    "company": "Acme Corp",
+    "email": "john.doe@example.com",
+    "country": "United States",
+    "sector": "Technology",
+    "comments": "Looking forward to our partnership",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAC..."
+  }'
+```
+
+### Get all LOIs
+
+```bash
+curl -X GET http://localhost:3000/api/loi
+```
+
+### Get a specific LOI by ID
+
+```bash
+curl -X GET http://localhost:3000/api/loi/60a1b2c3d4e5f6g7h8i9j0k1
+```
+
+### Download LOI PDF
+
+```bash
+curl -X GET http://localhost:3000/api/loi/60a1b2c3d4e5f6g7h8i9j0k1/download --output loi.pdf
+``` 
