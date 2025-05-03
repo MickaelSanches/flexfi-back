@@ -2,7 +2,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
 import app from "../../app";
-import WaitlistUser, { WaitlistFormData } from "../../models/WaitlistUser";
+import { IWaitlistFormData } from "../../models/User";
 
 let mongoServer: MongoMemoryServer;
 
@@ -10,7 +10,6 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
-  await WaitlistUser.createIndexes();
 });
 
 afterAll(async () => {
@@ -19,7 +18,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await WaitlistUser.deleteMany({});
+  await mongoose.connection.dropDatabase();
 });
 
 // Helper function to compare dates
@@ -30,9 +29,8 @@ const compareDates = (received: string, expected: string | Date) => {
 describe("Waitlist API", () => {
   describe("POST /api/waitlist", () => {
     it("should register a new waitlist user", async () => {
-      const mockFormData: WaitlistFormData = {
+      const mockFormData: IWaitlistFormData = {
         email: "test@example.com",
-        firstName: "Test",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "test123",
         preferredLanguage: "English",
@@ -55,13 +53,13 @@ describe("Waitlist API", () => {
         utmSource: "google",
         utmMedium: "cpc",
         utmCampaign: "test",
-        landingVariant: "A",
         timeToCompletionSeconds: 120,
-        consentMarketing: true,
+        experienceBnplRating: 4,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
+        consentMarketing: true,
+        signupTimestamp: new Date(),
       };
 
       const res = await request(app).post("/api/waitlist").send(mockFormData);
@@ -71,7 +69,7 @@ describe("Waitlist API", () => {
 
       // Verify that all form data is present
       Object.entries(mockFormData).forEach(([key, value]) => {
-        if (key === "consent_data_sharing_date") {
+        if (key === "consent_data_sharing_date" || key === "signupTimestamp") {
           expect(compareDates(res.body.data[key], value)).toBe(true);
         } else {
           expect(res.body.data).toHaveProperty(key, value);
@@ -106,92 +104,8 @@ describe("Waitlist API", () => {
     });
 
     it("should return 409 if email already exists", async () => {
-      // Create a user
-      await request(app)
-        .post("/api/waitlist")
-        .send({
-          email: "test@example.com",
-          firstName: "Test",
-          phoneNumber: "+1234567890",
-          telegramOrDiscordId: "test123",
-          preferredLanguage: "English",
-          country: "United States",
-          stateProvince: "California",
-          ageGroup: "18-29",
-          employmentStatus: "Employed – Full-time",
-          monthlyIncome: "$3,000 – $4,999",
-          educationLevel: "Bachelor's degree (BA, BS, etc.)",
-          hasCreditCard: true,
-          bnplServices: ["Klarna", "Afterpay"],
-          avgOnlineSpend: "$700 – $999",
-          cryptoLevel: "Intermediate",
-          walletType: "Metamask",
-          portfolioSize: "$1,000 – $9,999",
-          favoriteChains: ["Solana", "Ethereum"],
-          publicWallet: "0x123...",
-          mainReason: "Buy Now, Pay Later (BNPL) with crypto",
-          firstPurchase: "100-500",
-          utmSource: "google",
-          utmMedium: "cpc",
-          utmCampaign: "test",
-          landingVariant: "A",
-          timeToCompletionSeconds: 120,
-          consentMarketing: true,
-          consentAdult: true,
-          consent_data_sharing: true,
-          consent_data_sharing_date: new Date(),
-          experienceBnplRating: 4,
-        });
-
-      // Try to create another user with the same email
-      const res = await request(app)
-        .post("/api/waitlist")
-        .send({
-          email: "test@example.com",
-          firstName: "Test",
-          phoneNumber: "+1234567890",
-          telegramOrDiscordId: "test123",
-          preferredLanguage: "English",
-          country: "United States",
-          stateProvince: "California",
-          ageGroup: "18-29",
-          employmentStatus: "Employed – Full-time",
-          monthlyIncome: "$3,000 – $4,999",
-          educationLevel: "Bachelor's degree (BA, BS, etc.)",
-          hasCreditCard: true,
-          bnplServices: ["Klarna", "Afterpay"],
-          avgOnlineSpend: "$700 – $999",
-          cryptoLevel: "Intermediate",
-          walletType: "Metamask",
-          portfolioSize: "$1,000 – $9,999",
-          favoriteChains: ["Solana", "Ethereum"],
-          publicWallet: "0x123...",
-          mainReason: "Buy Now, Pay Later (BNPL) with crypto",
-          firstPurchase: "100-500",
-          utmSource: "google",
-          utmMedium: "cpc",
-          utmCampaign: "test",
-          landingVariant: "A",
-          timeToCompletionSeconds: 120,
-          consentMarketing: true,
-          consentAdult: true,
-          consent_data_sharing: true,
-          consent_data_sharing_date: new Date(),
-          experienceBnplRating: 4,
-        });
-
-      expect(res.status).toBe(409);
-      expect(res.body.status).toBe("error");
-      expect(res.body.message).toContain("already exists");
-    });
-  });
-
-  describe("GET /api/waitlist/count", () => {
-    it("should return the total count of waitlist users", async () => {
-      // Create some test users
-      const mockUser1: WaitlistFormData = {
-        email: "test1@example.com",
-        firstName: "Test",
+      const mockFormData: IWaitlistFormData = {
+        email: "test@example.com",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "test123",
         preferredLanguage: "English",
@@ -214,19 +128,34 @@ describe("Waitlist API", () => {
         utmSource: "google",
         utmMedium: "cpc",
         utmCampaign: "test",
-        landingVariant: "A",
         timeToCompletionSeconds: 120,
-        consentMarketing: true,
+        experienceBnplRating: 4,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
+        consentMarketing: true,
+        signupTimestamp: new Date(),
       };
-      const mockUser2: WaitlistFormData = {
-        email: "test2@example.com",
-        firstName: "Test2",
-        phoneNumber: "+1234567891",
-        telegramOrDiscordId: "test124",
+
+      // Create a user
+      await request(app).post("/api/waitlist").send(mockFormData);
+
+      // Try to create another user with the same email
+      const res = await request(app).post("/api/waitlist").send(mockFormData);
+
+      expect(res.status).toBe(409);
+      expect(res.body.status).toBe("error");
+      expect(res.body.message).toContain("already exists");
+    });
+  });
+
+  describe("GET /api/waitlist/count", () => {
+    it("should return the total count of waitlist users", async () => {
+      // Create some test users
+      const mockUser1: IWaitlistFormData = {
+        email: "user1@example.com",
+        phoneNumber: "+1234567890",
+        telegramOrDiscordId: "user1",
         preferredLanguage: "English",
         country: "United States",
         stateProvince: "California",
@@ -247,22 +176,53 @@ describe("Waitlist API", () => {
         utmSource: "google",
         utmMedium: "cpc",
         utmCampaign: "test",
-        landingVariant: "A",
         timeToCompletionSeconds: 120,
-        consentMarketing: true,
+        experienceBnplRating: 4,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
+        consentMarketing: true,
+        signupTimestamp: new Date(),
+      };
+
+      const mockUser2: IWaitlistFormData = {
+        email: "user2@example.com",
+        phoneNumber: "+1234567891",
+        telegramOrDiscordId: "user2",
+        preferredLanguage: "French",
+        country: "France",
+        stateProvince: "Île-de-France",
+        ageGroup: "30-44",
+        employmentStatus: "Self-employed / Freelancer",
+        monthlyIncome: "$5,000 – $9,999",
+        educationLevel: "Master's degree (MA, MSc, MBA, etc.)",
+        hasCreditCard: true,
+        bnplServices: ["Alma", "Oney"],
+        avgOnlineSpend: "$1,000 – $1,499",
+        cryptoLevel: "Crypto Native",
+        walletType: "Phantom",
+        portfolioSize: "$10,000 – $49,999",
+        favoriteChains: ["Solana", "Bitcoin"],
+        publicWallet: "0x456...",
+        mainReason: "Earn yield or rewards on purchases",
+        firstPurchase: "100-500",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "test2",
+        timeToCompletionSeconds: 180,
+        experienceBnplRating: 5,
+        consentAdult: true,
+        consent_data_sharing: true,
+        consent_data_sharing_date: new Date(),
+        consentMarketing: true,
+        signupTimestamp: new Date(),
       };
 
       // Create users sequentially
       const res1 = await request(app).post("/api/waitlist").send(mockUser1);
-      console.log("Première réponse:", res1.status, res1.body);
       expect(res1.status).toBe(201);
 
       const res2 = await request(app).post("/api/waitlist").send(mockUser2);
-      console.log("Deuxième réponse:", res2.status, res2.body);
       expect(res2.status).toBe(201);
 
       const res = await request(app).get("/api/waitlist/count");
@@ -287,9 +247,8 @@ describe("Waitlist API", () => {
     it("should return the number of referrals for a valid code", async () => {
       // Create users with the same referral code
       const referralCode = "REF123";
-      const mockUser1: WaitlistFormData = {
+      const mockUser1: IWaitlistFormData = {
         email: "user1@example.com",
-        firstName: "User1",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "user1",
         preferredLanguage: "English",
@@ -309,22 +268,20 @@ describe("Waitlist API", () => {
         publicWallet: "0x123...",
         mainReason: "Buy Now, Pay Later (BNPL) with crypto",
         firstPurchase: "100-500",
-        referralCodeUsed: referralCode,
-        utmSource: "test",
-        utmMedium: "test",
+        utmSource: "google",
+        utmMedium: "cpc",
         utmCampaign: "test",
-        landingVariant: "A",
         timeToCompletionSeconds: 120,
-        consentMarketing: true,
+        experienceBnplRating: 4,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
+        consentMarketing: true,
+        signupTimestamp: new Date(),
       };
 
-      const mockUser2: WaitlistFormData = {
+      const mockUser2: IWaitlistFormData = {
         email: "user2@example.com",
-        firstName: "User2",
         phoneNumber: "+1234567891",
         telegramOrDiscordId: "user2",
         preferredLanguage: "French",
@@ -344,17 +301,16 @@ describe("Waitlist API", () => {
         publicWallet: "0x456...",
         mainReason: "Earn yield or rewards on purchases",
         firstPurchase: "100-500",
-        referralCodeUsed: referralCode,
-        utmSource: "test2",
-        utmMedium: "test2",
+        utmSource: "google",
+        utmMedium: "cpc",
         utmCampaign: "test2",
-        landingVariant: "B",
         timeToCompletionSeconds: 180,
-        consentMarketing: true,
+        experienceBnplRating: 5,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 5,
+        consentMarketing: true,
+        signupTimestamp: new Date(),
       };
 
       const [res1, res2] = await Promise.all([
@@ -388,90 +344,7 @@ describe("Waitlist API", () => {
 
   describe("GET /api/waitlist/export", () => {
     it("should return a CSV file with all waitlist users", async () => {
-      /*// Create test users
-      const mockUser1: WaitlistFormData = {
-        email: "user1@example.com",
-        firstName: "User1",
-        phoneNumber: "+1234567890",
-        telegramOrDiscordId: "user1",
-        preferredLanguage: "English",
-        country: "United States",
-        stateProvince: "California",
-        ageGroup: "18-29",
-        employmentStatus: "Employed – Full-time",
-        monthlyIncome: "$3,000 – $4,999",
-        educationLevel: "Bachelor's degree (BA, BS, etc.)",
-        hasCreditCard: true,
-        bnplServices: ["Klarna", "Afterpay"],
-        avgOnlineSpend: "$700 – $999",
-        cryptoLevel: "Intermediate",
-        walletType: "Metamask",
-        portfolioSize: "$1,000 – $9,999",
-        favoriteChains: ["Solana", "Ethereum"],
-        publicWallet: "0x123...",
-        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
-        firstPurchase: "100-500",
-        utmSource: "test",
-        utmMedium: "test",
-        utmCampaign: "test",
-        landingVariant: "A",
-        timeToCompletionSeconds: 120,
-        consentMarketing: true,
-        consentAdult: true,
-        consent_data_sharing: true,
-        consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
-      };
-      const mockUser2: WaitlistFormData = {
-        email: "user2@example.com",
-        firstName: "User2",
-        phoneNumber: "+1234567891",
-        telegramOrDiscordId: "user2",
-        preferredLanguage: "French",
-        country: "France",
-        stateProvince: "Île-de-France",
-        ageGroup: "30-44",
-        employmentStatus: "Self-employed / Freelancer",
-        monthlyIncome: "$5,000 – $9,999",
-        educationLevel: "Master's degree (MA, MSc, MBA, etc.)",
-        hasCreditCard: true,
-        bnplServices: ["Alma", "Oney"],
-        avgOnlineSpend: "$1,000 – $1,499",
-        cryptoLevel: "Crypto Native",
-        walletType: "Phantom",
-        portfolioSize: "$10,000 – $49,999",
-        favoriteChains: ["Solana", "Bitcoin"],
-        publicWallet: "0x456...",
-        mainReason: "Earn yield or rewards on purchases",
-        firstPurchase: "100-500",
-        utmSource: "test2",
-        utmMedium: "test2",
-        utmCampaign: "test2",
-        landingVariant: "B",
-        timeToCompletionSeconds: 180,
-        consentMarketing: true,
-        consentAdult: true,
-        consent_data_sharing: true,
-        consent_data_sharing_date: new Date(),
-        experienceBnplRating: 5,
-      };
-
-      const [res1, res2] = await Promise.all([
-        request(app).post("/api/waitlist").send(mockUser1),
-        request(app).post("/api/waitlist").send(mockUser2),
-      ]);
-
-      expect(res1.status).toBe(201);
-      expect(res2.status).toBe(201);
-
-      // Get CSV with authentication
-      const res = await request(app)
-        .get("/api/waitlist/export")
-        .set("Authorization", "Bearer test_token");
-
-      expect(res.status).toBe(200);
-      expect(res.header["content-type"]).toBe("text/csv");
-      expect(res.header["content-disposition"]).toContain("waitlist_users.csv");*/
+      // Test commenté car il nécessite une authentification
     });
   });
 });

@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import WaitlistUser, { IWaitlistUser } from "../models/WaitlistUser";
-import { InternalError } from "../utils/AppError";
+import { IUser, IUserDataToExport, IWaitlistUser, User } from "../models/User";
+import { ConflictError, InternalError, NotFoundError } from "../utils/AppError";
 
 dotenv.config();
 
@@ -29,14 +29,35 @@ function createCsv(headers: string[], data: any[]): string {
 
 export class WaitlistService {
   // Register a new user in the waitlist
-  async registerUser(userData: IWaitlistUser): Promise<IWaitlistUser> {
+  async registerWaitlistInfos(userData: IWaitlistUser): Promise<IUser> {
     try {
-      const referralCode = await this.generateUniqueReferralCode();
-      const newUser = new WaitlistUser({
-        ...userData,
-        userReferralCode: referralCode,
-      });
-      return await newUser.save();
+      const user = await User.findOne({ email: userData.email });
+
+      if (!user) {
+        throw NotFoundError("User not found");
+      }
+
+      if (user.formFullfilled) {
+        throw ConflictError("Form already submitted");
+      }
+
+      const updatedUser = await User.findOneAndUpdate(
+        { email: userData.email },
+        {
+          $set: {
+            ...userData.formData,
+            formFullfilled: true,
+            points: user.points + 20,
+          },
+        },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        throw InternalError("Failed to update user");
+      }
+
+      return updatedUser;
     } catch (error: any) {
       throw error;
     }
@@ -45,7 +66,7 @@ export class WaitlistService {
   // Get total number of users in the waitlist
   async getWaitlistCount(): Promise<number> {
     try {
-      return await WaitlistUser.countDocuments();
+      return await User.countDocuments();
     } catch (error) {
       throw InternalError("Failed to get waitlist count");
     }
@@ -54,8 +75,8 @@ export class WaitlistService {
   // Get number of referrals linked to a code
   async getReferralCount(referralCode: string): Promise<number> {
     try {
-      const count = await WaitlistUser.countDocuments({
-        referralCodeUsed: referralCode,
+      const count = await User.countDocuments({
+        referralCodeUsed: referralCode.toUpperCase(),
       });
       return count;
     } catch (error: unknown) {
@@ -74,21 +95,38 @@ export class WaitlistService {
         fs.mkdirSync(EXPORT_DIR, { recursive: true });
       }
 
-      const users = await WaitlistUser.find().lean<IWaitlistUser[]>();
+      const users = await User.find().lean<IUserDataToExport[]>();
       const dateStr = new Date().toISOString().split("T")[0];
       const filename = `waitlist_${dateStr}.csv`;
       const filePath = path.join(EXPORT_DIR, filename);
 
       const headers = [
         "email",
+        "password",
         "firstName",
+        "lastName",
+        "referralCodeUsed",
+        "userReferralCode",
+        "authMethod",
+        "googleId",
+        "appleId",
+        "twitterId",
+        "wallets",
+        "kycStatus",
+        "kycId",
+        "selectedCard",
+        "formFullfilled",
+        "points",
+        "landingVariant",
+        "deviceType",
+        "browser",
+        "ipCity",
+        "deviceLocale",
         "phoneNumber",
         "telegramOrDiscordId",
         "preferredLanguage",
         "country",
         "stateProvince",
-        "ipCity",
-        "deviceLocale",
         "ageGroup",
         "employmentStatus",
         "monthlyIncome",
@@ -103,21 +141,18 @@ export class WaitlistService {
         "publicWallet",
         "mainReason",
         "firstPurchase",
-        "referralCodeUsed",
-        "userReferralCode",
         "utmSource",
         "utmMedium",
         "utmCampaign",
-        "landingVariant",
-        "deviceType",
-        "browser",
-        "signupTimestamp",
         "timeToCompletionSeconds",
-        "consentMarketing",
+        "experienceBnplRating",
         "consentAdult",
         "consent_data_sharing",
         "consent_data_sharing_date",
-        "experienceBnplRating",
+        "consentMarketing",
+        "signupTimestamp",
+        "createdAt",
+        "updatedAt",
       ];
 
       const formattedData = users.map((user) => {
@@ -131,34 +166,64 @@ export class WaitlistService {
           formattedUser.bnplServices = user.bnplServices.join(", ");
         if (user.favoriteChains)
           formattedUser.favoriteChains = user.favoriteChains.join(", ");
+        if (user.wallets)
+          formattedUser.wallets = user.wallets
+            .map((w) => w.publicKey)
+            .join(", ");
         if (user.signupTimestamp)
           formattedUser.signupTimestamp = user.signupTimestamp.toISOString();
         if (user.consent_data_sharing_date)
           formattedUser.consent_data_sharing_date =
             user.consent_data_sharing_date.toISOString();
+        if (user.createdAt)
+          formattedUser.createdAt = user.createdAt.toISOString();
+        if (user.updatedAt)
+          formattedUser.updatedAt = user.updatedAt.toISOString();
         if (user.timeToCompletionSeconds)
           formattedUser.timeToCompletionSeconds =
             user.timeToCompletionSeconds.toString();
         if (user.experienceBnplRating)
           formattedUser.experienceBnplRating =
             user.experienceBnplRating.toString();
+        if (user.points) formattedUser.points = user.points.toString();
+        if (user.hasCreditCard !== undefined)
+          formattedUser.hasCreditCard = user.hasCreditCard.toString();
+        if (user.consentAdult !== undefined)
+          formattedUser.consentAdult = user.consentAdult.toString();
+        if (user.consent_data_sharing !== undefined)
+          formattedUser.consent_data_sharing =
+            user.consent_data_sharing.toString();
+        if (user.consentMarketing !== undefined)
+          formattedUser.consentMarketing = user.consentMarketing.toString();
+        if (user.formFullfilled !== undefined)
+          formattedUser.formFullfilled = user.formFullfilled.toString();
+        if (user.kycStatus) formattedUser.kycStatus = user.kycStatus.toString();
 
         Object.entries(user).forEach(([key, value]) => {
           if (
             ![
               "bnplServices",
               "favoriteChains",
+              "wallets",
               "signupTimestamp",
               "consent_data_sharing_date",
-              "timeToCompletionSeconds",
-              "experienceBnplRating",
-              "_id",
-              "__v",
               "createdAt",
               "updatedAt",
+              "timeToCompletionSeconds",
+              "experienceBnplRating",
+              "points",
+              "hasCreditCard",
+              "consentAdult",
+              "consent_data_sharing",
+              "consentMarketing",
+              "formFullfilled",
+              "kycStatus",
+              "_id",
+              "__v",
+              "password",
             ].includes(key)
           ) {
-            formattedUser[key] = value?.toString() || "";
+            formattedUser[key] = value?.toString() || "N/A";
           }
         });
 
@@ -173,23 +238,15 @@ export class WaitlistService {
     }
   }
 
-  private generateReferralCode(): string {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += characters.charAt(Math.floor(Math.random() * characters.length));
+  async handleReferralPoints(email: string) {
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      throw NotFoundError("User not found");
     }
-    return `FLEX-${code}`;
-  }
 
-  private async generateUniqueReferralCode(): Promise<string> {
-    let code = this.generateReferralCode();
-    let exists = await WaitlistUser.findOne({ userReferralCode: code });
-    while (exists) {
-      code = this.generateReferralCode();
-      exists = await WaitlistUser.findOne({ userReferralCode: code });
-    }
-    return code;
+    // Add points to the user
+    user.points += 20;
+    await user.save();
   }
 }
 

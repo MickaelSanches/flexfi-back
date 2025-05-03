@@ -1,26 +1,55 @@
-import { Request, Response, NextFunction } from 'express';
-import authService from '../services/authService';
-import { AppError } from '../utils/AppError';
-import logger from '../utils/logger';
+import { NextFunction, Request, Response } from "express";
+import { IBasicUser, IUser } from "../models/User";
+import authService from "../services/authService";
+import logger from "../utils/logger";
 
 export class AuthController {
   // Inscription avec email/mot de passe
-  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async register(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { email, password, firstName, lastName } = req.body;
-      
+      const {
+        email,
+        firstName,
+        lastName,
+        password,
+        referralCodeUsed,
+      }: IBasicUser = req.body;
+
       if (!email || !password) {
-        res.status(400).json({ status: 'error', message: 'Email and password are required' });
+        res.status(400).json({
+          status: "error",
+          message: "Email and password are required",
+        });
         return;
       }
-      
-      const { user, token } = await authService.registerWithEmail(
-        email,
-        password,
-        firstName,
-        lastName
-      );
-      
+
+      const deviceType =
+        req.headers["sec-ch-ua-platform"]?.toString() || undefined;
+      const browser = req.headers["user-agent"]?.toString() || undefined;
+      const ipCity =
+        req.headers["x-forwarded-for"]?.toString() ||
+        req.socket.remoteAddress?.toString() ||
+        undefined;
+      const deviceLocale =
+        req.headers["accept-language"]?.toString() || undefined;
+
+      const { user, token }: { user: IUser; token: string } =
+        await authService.registerWithEmail(
+          email,
+          password,
+          firstName,
+          lastName,
+          referralCodeUsed,
+          deviceType,
+          browser,
+          ipCity,
+          deviceLocale
+        );
+
       // Ne pas renvoyer le mot de passe dans la réponse
       const userResponse = {
         _id: user._id,
@@ -30,31 +59,39 @@ export class AuthController {
         authMethod: user.authMethod,
         wallets: user.wallets,
         kycStatus: user.kycStatus,
-        selectedCard: user.selectedCard,
+        formFullfilled: user.formFullfilled,
       };
-      
-      res.status(201).json({ 
-        status: 'success', 
-        data: { user: userResponse, token } 
+
+      // Handle referral points
+      if (referralCodeUsed) {
+        await authService.handleReferralPoints(referralCodeUsed);
+      }
+
+      res.status(201).json({
+        status: "success",
+        data: { user: userResponse, token },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
-  
+
   // Connexion avec email/mot de passe
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
-        res.status(400).json({ status: 'error', message: 'Email and password are required' });
+        res.status(400).json({
+          status: "error",
+          message: "Email and password are required",
+        });
         return;
       }
-      
+
       const { user, token } = await authService.loginWithEmail(email, password);
-      
+
       // Ne pas renvoyer le mot de passe dans la réponse
       const userResponse = {
         _id: user._id,
@@ -65,137 +102,201 @@ export class AuthController {
         wallets: user.wallets,
         kycStatus: user.kycStatus,
         selectedCard: user.selectedCard,
+        formFullfilled: user.formFullfilled,
       };
-      
+
       // Logger la connexion réussie
       logger.info(`User logged in: ${user._id}`, { userId: user._id });
-      
-      res.status(200).json({ 
-        status: 'success', 
-        data: { user: userResponse, token } 
+
+      res.status(200).json({
+        status: "success",
+        data: { user: userResponse, token },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
-  
+
   // Callback pour Google OAuth
-  async googleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async googleCallback(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // Passport.js aura déjà authentifié l'utilisateur et mis le profil dans req.user
       const profile = req.user as any;
-      
+
       if (!profile) {
-        res.status(401).json({ status: 'error', message: 'Google authentication failed' });
+        res
+          .status(401)
+          .json({ status: "error", message: "Google authentication failed" });
         return;
       }
-      
+
       const { user, token } = await authService.findOrCreateOAuthUser(
         profile,
-        'google'
+        "google"
       );
-      
+
       // Logger la connexion OAuth réussie
-      logger.info(`User authenticated via Google: ${user._id}`, { userId: user._id });
-      
+      logger.info(`User authenticated via Google: ${user._id}`, {
+        userId: user._id,
+      });
+
       // En production, redirigez vers le frontend avec le token
       // res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
-      
+
       // Pour cet exemple, nous renvoyons simplement le token
-      res.status(200).json({ 
-        status: 'success', 
-        data: { user, token } 
+      res.status(200).json({
+        status: "success",
+        data: { user, token },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
-  
+
   // Callback pour Apple Sign In
-  async appleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async appleCallback(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // Passport.js aura déjà authentifié l'utilisateur et mis le profil dans req.user
       const profile = req.user as any;
-      
+
       if (!profile) {
-        res.status(401).json({ status: 'error', message: 'Apple authentication failed' });
+        res
+          .status(401)
+          .json({ status: "error", message: "Apple authentication failed" });
         return;
       }
-      
+
       const { user, token } = await authService.findOrCreateOAuthUser(
         profile,
-        'apple'
+        "apple"
       );
-      
+
       // Logger la connexion OAuth réussie
-      logger.info(`User authenticated via Apple: ${user._id}`, { userId: user._id });
-      
+      logger.info(`User authenticated via Apple: ${user._id}`, {
+        userId: user._id,
+      });
+
       // En production, redirigez vers le frontend avec le token
       // res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
-      
+
       // Pour cet exemple, nous renvoyons simplement le token
-      res.status(200).json({ 
-        status: 'success', 
-        data: { user, token } 
+      res.status(200).json({
+        status: "success",
+        data: { user, token },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
-  
+
   // Callback pour Twitter OAuth
-  async twitterCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async twitterCallback(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // Passport.js aura déjà authentifié l'utilisateur et mis le profil dans req.user
       const profile = req.user as any;
-      
+
       if (!profile) {
-        res.status(401).json({ status: 'error', message: 'Twitter authentication failed' });
+        res
+          .status(401)
+          .json({ status: "error", message: "Twitter authentication failed" });
         return;
       }
-      
+
       const { user, token } = await authService.findOrCreateOAuthUser(
         profile,
-        'twitter'
+        "twitter"
       );
-      
+
       // Logger la connexion OAuth réussie
-      logger.info(`User authenticated via Twitter: ${user._id}`, { userId: user._id });
-      
+      logger.info(`User authenticated via Twitter: ${user._id}`, {
+        userId: user._id,
+      });
+
       // En production, redirigez vers le frontend avec le token
       // res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
-      
+
       // Pour cet exemple, nous renvoyons simplement le token
-      res.status(200).json({ 
-        status: 'success', 
-        data: { user, token } 
+      res.status(200).json({
+        status: "success",
+        data: { user, token },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
-  
+
   // Récupérer l'utilisateur actuel
-  async getCurrentUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getCurrentUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // req.user est injecté par le middleware d'authentification
       const user = req.user;
-      
+
       if (!user) {
-        res.status(401).json({ status: 'error', message: 'Not authenticated' });
+        res.status(401).json({ status: "error", message: "Not authenticated" });
         return;
       }
-      
-      res.status(200).json({ 
-        status: 'success', 
-        data: { user } 
+
+      res.status(200).json({
+        status: "success",
+        data: { user },
       });
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
+      next(error);
+    }
+  }
+
+  // Récupérer le top 10 des parrainages
+  async getTopReferrals(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const topReferrals = await authService.getTopReferrals();
+
+      // Formater la réponse pour ne pas exposer les données sensibles
+      const formattedReferrals = topReferrals.map((user) => ({
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        points: user.points,
+        userReferralCode: user.userReferralCode,
+      }));
+
+      res.status(200).json({
+        status: "success",
+        data: {
+          topReferrals: formattedReferrals,
+          count: formattedReferrals.length,
+        },
+      });
+    } catch (error: any) {
+      // Logger l'erreur
+      logger.error(`Error getting top referrals: ${error.message}`, {
+        error: error.stack,
+      });
       next(error);
     }
   }

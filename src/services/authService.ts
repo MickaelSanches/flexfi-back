@@ -1,12 +1,12 @@
-import User, { IUser } from "../models/User";
-import { generateToken } from "../utils/jwt";
+import { IUser, User } from "../models/User";
 import {
   AppError,
   ConflictError,
-  UnauthorizedError,
   InternalError,
+  NotFoundError,
+  UnauthorizedError,
 } from "../utils/AppError";
-import { isPasswordStrong } from "../utils/validators";
+import { generateToken } from "../utils/jwt";
 
 export class AuthService {
   // Inscription avec email/mot de passe
@@ -14,7 +14,12 @@ export class AuthService {
     email: string,
     password: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    referralCodeUsed?: string,
+    deviceType?: string,
+    browser?: string,
+    ipCity?: string,
+    deviceLocale?: string
   ): Promise<{ user: IUser; token: string }> {
     try {
       // Vérification de la robustesse du mot de passe
@@ -30,13 +35,21 @@ export class AuthService {
         throw ConflictError("User already exists");
       }
 
+      // Créer un referral code
+      const referralCode = await this.generateUniqueReferralCode();
       // Créer un nouvel utilisateur
       const user = new User({
-        email,
-        password,
-        firstName,
-        lastName,
+        email: email.toLowerCase(),
+        password: password,
+        firstName: firstName?.toLowerCase(),
+        lastName: lastName?.toLowerCase(),
         authMethod: "email",
+        referralCodeUsed: referralCodeUsed?.toUpperCase(),
+        userReferralCode: referralCode.toUpperCase(),
+        deviceType: deviceType,
+        browser: browser,
+        ipCity: ipCity,
+        deviceLocale: deviceLocale,
       });
 
       await user.save();
@@ -137,6 +150,52 @@ export class AuthService {
       if (error instanceof AppError) throw error;
       // Sinon envelopper dans InternalError
       throw InternalError(`OAuth authentication failed: ${error.message}`);
+    }
+  }
+
+  async handleReferralPoints(referralCodeUsed: string) {
+    const user = await User.findOne({ userReferralCode: referralCodeUsed });
+    if (!user) {
+      throw NotFoundError("User not found");
+    }
+    // Add points to the user
+    user.points += 5;
+    await user.save();
+  }
+
+  private generateReferralCode(): string {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return `FLEX-${code}`;
+  }
+
+  private async generateUniqueReferralCode(): Promise<string> {
+    let code = this.generateReferralCode();
+    let exists = await User.findOne({ userReferralCode: code });
+    while (exists) {
+      code = this.generateReferralCode();
+      exists = await User.findOne({ userReferralCode: code });
+    }
+    return code;
+  }
+
+  async getTopReferrals(): Promise<IUser[]> {
+    try {
+      const topReferrals = await User.find().sort({ points: -1 }).limit(10);
+
+      if (!topReferrals || topReferrals.length === 0) {
+        throw NotFoundError("No referrals found");
+      }
+
+      return topReferrals;
+    } catch (error: any) {
+      // Propager l'erreur AppError
+      if (error instanceof AppError) throw error;
+      // Sinon envelopper dans InternalError
+      throw InternalError(`Failed to get top referrals: ${error.message}`);
     }
   }
 }
