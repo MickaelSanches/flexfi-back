@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "FlexFi backend - A financial platform connecting traditional finance to Solana blockchain",
   "main": "dist/index.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -19,6 +22,7 @@
     "@solana/web3.js": "^1.73.3",
     "bcrypt": "^5.1.0",
     "bs58": "^6.0.0",
+    "colors": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "envalid": "^8.0.0",
