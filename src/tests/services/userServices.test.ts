@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import userService from "../../services/userService";
+import mongoose from "mongoose";
 import { User } from "../../models/User";
+import userService from "../../services/userService";
 
 let mongoServer: MongoMemoryServer;
 
@@ -29,6 +29,10 @@ describe("UserService", () => {
       firstName: "Test",
       lastName: "User",
       authMethod: "email",
+      userReferralCode: "TEST123",
+      formFullfilled: false,
+      wallets: [],
+      kycStatus: "none",
     });
 
     await mockUser.save();
@@ -47,6 +51,10 @@ describe("UserService", () => {
       firstName: "Test",
       lastName: "User",
       authMethod: "email",
+      userReferralCode: "TEST123",
+      formFullfilled: false,
+      wallets: [],
+      kycStatus: "none",
     });
 
     await mockUser.save();
@@ -65,6 +73,10 @@ describe("UserService", () => {
       firstName: "Test",
       lastName: "User",
       authMethod: "email",
+      userReferralCode: "TEST123",
+      formFullfilled: false,
+      wallets: [],
+      kycStatus: "none",
     });
 
     await mockUser.save();

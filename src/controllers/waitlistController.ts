@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
-import { IWaitlistUser } from "../models/User";
+import { IWaitlistFormData, IWaitlistUser } from "../models/User";
 import waitlistService from "../services/waitlistService";
 
 export class WaitlistController {
@@ -11,10 +11,13 @@ export class WaitlistController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { email, ...formData } = req.body;
+      const formData: IWaitlistFormData = req.body;
+
+      const { email, ...formDataWithoutEmail } = formData;
+
       const userData: IWaitlistUser = {
         email,
-        formData,
+        formData: formDataWithoutEmail,
       };
 
       const updatedUser = await waitlistService.registerWaitlistInfos(userData);

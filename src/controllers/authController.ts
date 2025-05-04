@@ -60,7 +60,6 @@ export class AuthController {
         wallets: user.wallets,
         kycStatus: user.kycStatus,
         formFullfilled: user.formFullfilled,
-        userReferralCode: user.userReferralCode,
       };
 
       // Handle referral points
@@ -250,11 +249,21 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      // req.user est injecté par le middleware d'authentification
-      const user = req.user;
+      const userId = (req.user as any)?._id;
+      if (!userId) {
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
+        });
+        return;
+      }
 
+      const user = await authService.getUserById(userId.toString());
       if (!user) {
-        res.status(401).json({ status: "error", message: "Not authenticated" });
+        res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
         return;
       }
 
@@ -263,7 +272,6 @@ export class AuthController {
         data: { user },
       });
     } catch (error) {
-      // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
@@ -299,6 +307,58 @@ export class AuthController {
       logger.error(`Error getting top referrals: ${error.message}`, {
         error: error.stack,
       });
+      next(error);
+    }
+  }
+
+  // Récupérer les points de l'utilisateur
+  async getUserPoints(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = (req.user as any)?._id;
+      if (!userId) {
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
+        });
+        return;
+      }
+
+      const points = await authService.getUserPoints(userId.toString());
+      res.status(200).json({
+        status: "success",
+        data: { points },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Récupérer le rang de l'utilisateur
+  async getUserRank(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = (req.user as any)?._id;
+      if (!userId) {
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
+        });
+        return;
+      }
+
+      const rank = await authService.getUserRank(userId.toString());
+      res.status(200).json({
+        status: "success",
+        data: { rank },
+      });
+    } catch (error) {
       next(error);
     }
   }

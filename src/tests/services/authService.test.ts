@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import authService from "../../../src/services/authService";
+import mongoose from "mongoose";
 import { User } from "../../../src/models/User";
+import authService from "../../../src/services/authService";
 import { AppError } from "../../../src/utils/AppError";
 
 let mongoServer: MongoMemoryServer;
@@ -33,8 +33,8 @@ describe("AuthService", () => {
 
       expect(user).toBeDefined();
       expect(user.email).toBe("test@example.com");
-      expect(user.firstName).toBe("John");
-      expect(user.lastName).toBe("Doe");
+      expect(user.firstName).toBe("john");
+      expect(user.lastName).toBe("doe");
       expect(token).toBeDefined();
     });
 
@@ -65,7 +65,12 @@ describe("AuthService", () => {
   describe("loginWithEmail", () => {
     it("should login a user with valid credentials", async () => {
       // Créer un utilisateur d'abord
-      await authService.registerWithEmail("login@example.com", "password123");
+      await authService.registerWithEmail(
+        "login@example.com",
+        "password123",
+        "login",
+        "user"
+      );
 
       // Tester la connexion
       const { user, token } = await authService.loginWithEmail(
@@ -75,6 +80,8 @@ describe("AuthService", () => {
 
       expect(user).toBeDefined();
       expect(user.email).toBe("login@example.com");
+      expect(user.firstName).toBe("login");
+      expect(user.lastName).toBe("user");
       expect(token).toBeDefined();
     });
 

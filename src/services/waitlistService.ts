@@ -32,13 +32,12 @@ export class WaitlistService {
   async registerWaitlistInfos(userData: IWaitlistUser): Promise<IUser> {
     try {
       const user = await User.findOne({ email: userData.email });
-      console.log("User found:", user);
 
       if (!user) {
         throw NotFoundError("User not found");
       }
 
-      if (user.formFullfilled == true) {
+      if (user.formFullfilled) {
         throw ConflictError("Form already submitted");
       }
 
@@ -67,7 +66,7 @@ export class WaitlistService {
   // Get total number of users in the waitlist
   async getWaitlistCount(): Promise<number> {
     try {
-      return await User.countDocuments();
+      return await User.countDocuments({ formFullfilled: true });
     } catch (error) {
       throw InternalError("Failed to get waitlist count");
     }
@@ -76,6 +75,14 @@ export class WaitlistService {
   // Get number of referrals linked to a code
   async getReferralCount(referralCode: string): Promise<number> {
     try {
+      // Vérifier d'abord si le code existe
+      const userWithCode = await User.findOne({
+        userReferralCode: referralCode.toUpperCase(),
+      });
+      if (!userWithCode) {
+        throw NotFoundError("Referral code not found");
+      }
+
       const count = await User.countDocuments({
         referralCodeUsed: referralCode.toUpperCase(),
       });
@@ -83,7 +90,7 @@ export class WaitlistService {
     } catch (error: unknown) {
       console.error("Error fetching referral count:", error);
       if (error instanceof Error) {
-        throw InternalError(`Failed to fetch referral count: ${error.message}`);
+        throw error;
       }
       throw InternalError("Failed to fetch referral count");
     }
@@ -237,17 +244,6 @@ export class WaitlistService {
     } catch (error) {
       throw InternalError("Failed to export waitlist to CSV");
     }
-  }
-
-  async handleReferralPoints(email: string) {
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      throw NotFoundError("User not found");
-    }
-
-    // Add points to the user
-    user.points += 20;
-    await user.save();
   }
 }
 

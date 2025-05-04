@@ -4,44 +4,44 @@ export const registerWaitlistUserValidation = [
   // Basic information
   body("email")
     .notEmpty()
-    .withMessage("Email is required")
+    .withMessage("Please enter your email address")
     .isEmail()
-    .withMessage("Invalid email format"),
+    .withMessage("Please enter a valid email address"),
   body("phoneNumber")
     .optional()
     .matches(/^\+?[1-9]\d{1,14}$/)
-    .withMessage("Invalid phone number format"),
+    .withMessage("Please enter a valid phone number"),
   body("telegramOrDiscordId")
     .optional()
     .isString()
-    .withMessage("Telegram or Discord ID must be a string"),
+    .withMessage("Please enter a valid Telegram or Discord ID"),
   body("preferredLanguage")
     .notEmpty()
-    .withMessage("Preferred language is required")
+    .withMessage("Please select your preferred language")
     .isIn(["English", "French", "Spanish", "Portuguese"])
-    .withMessage("Invalid preferred language"),
+    .withMessage("This language is not available"),
 
   // Location
   body("country")
     .notEmpty()
-    .withMessage("Country is required")
+    .withMessage("Please select your country")
     .isString()
-    .withMessage("Country must be a string"),
+    .withMessage("Please select a valid country"),
   body("stateProvince")
     .notEmpty()
-    .withMessage("State/Province is required")
+    .withMessage("Please enter your state/province")
     .isString()
-    .withMessage("State/Province must be a string"),
+    .withMessage("Please enter a valid state/province"),
 
   // Demographics
   body("ageGroup")
     .notEmpty()
-    .withMessage("Age group is required")
+    .withMessage("Please select your age group")
     .isIn(["18-29", "30-44", "45-59", "60+"])
-    .withMessage("Invalid age group"),
+    .withMessage("Please select a valid age group"),
   body("employmentStatus")
     .notEmpty()
-    .withMessage("Employment status is required")
+    .withMessage("Please select your employment status")
     .isIn([
       "Employed – Full-time",
       "Employed – Part-time",
@@ -58,10 +58,10 @@ export const registerWaitlistUserValidation = [
       "Government / Public Sector Employee",
       "Other",
     ])
-    .withMessage("Invalid employment status"),
+    .withMessage("Please select a valid employment status"),
   body("monthlyIncome")
     .notEmpty()
-    .withMessage("Monthly income is required")
+    .withMessage("Please select your monthly income")
     .isIn([
       "Less than $1,500",
       "$1,500 – $1,999",
@@ -70,10 +70,10 @@ export const registerWaitlistUserValidation = [
       "$5,000 – $9,999",
       "$10,000 or more",
     ])
-    .withMessage("Invalid monthly income range"),
+    .withMessage("Please select a valid income range"),
   body("educationLevel")
     .notEmpty()
-    .withMessage("Education level is required")
+    .withMessage("Please select your education level")
     .isIn([
       "No formal education",
       "Primary school / Elementary education",
@@ -85,19 +85,21 @@ export const registerWaitlistUserValidation = [
       "Doctorate / PhD",
       "Other",
     ])
-    .withMessage("Invalid education level"),
+    .withMessage("Please select a valid education level"),
 
   // Financial information
   body("hasCreditCard")
     .notEmpty()
-    .withMessage("Credit card status is required")
+    .withMessage("Please indicate if you have a credit card")
     .isBoolean()
-    .withMessage("Credit card status must be a boolean"),
+    .withMessage("Please select yes or no"),
   body("bnplServices")
     .notEmpty()
-    .withMessage("BNPL services are required")
+    .withMessage("Please select at least one BNPL service")
     .isArray()
-    .withMessage("BNPL services must be an array"),
+    .withMessage("Please select at least one BNPL service")
+    .custom((value) => value.length > 0)
+    .withMessage("Please select at least one BNPL service"),
   body("bnplServices.*")
     .isIn([
       "Klarna",
@@ -114,10 +116,10 @@ export const registerWaitlistUserValidation = [
       "Other",
       "None",
     ])
-    .withMessage("Invalid BNPL service"),
+    .withMessage("Please select valid BNPL services"),
   body("avgOnlineSpend")
     .notEmpty()
-    .withMessage("Average online spend is required")
+    .withMessage("Please select your average online spending")
     .isIn([
       "Less than $50",
       "$50 – $99",
@@ -129,17 +131,17 @@ export const registerWaitlistUserValidation = [
       "$1,500 – $1,999",
       "$2,000 or more",
     ])
-    .withMessage("Invalid average online spend range"),
+    .withMessage("Please select a valid spending range"),
 
   // Crypto
   body("cryptoLevel")
     .notEmpty()
-    .withMessage("Crypto level is required")
+    .withMessage("Please select your crypto experience level")
     .isIn(["Zero", "Beginner", "Intermediate", "Active User", "Crypto Native"])
-    .withMessage("Invalid crypto level"),
+    .withMessage("Please select a valid experience level"),
   body("walletType")
     .notEmpty()
-    .withMessage("Wallet type is required")
+    .withMessage("Please select your wallet type")
     .isIn([
       "Phantom",
       "Solflare",
@@ -152,22 +154,24 @@ export const registerWaitlistUserValidation = [
       "Uniswap",
       "Other",
     ])
-    .withMessage("Invalid wallet type"),
+    .withMessage("Please select a valid wallet type"),
   body("portfolioSize")
     .notEmpty()
-    .withMessage("Portfolio size is required")
+    .withMessage("Please select your portfolio size")
     .isIn([
       "Less than $1,000",
       "$1,000 – $9,999",
       "$10,000 – $49,999",
       "$50,000 or more",
     ])
-    .withMessage("Invalid portfolio size"),
+    .withMessage("Please select a valid portfolio size"),
   body("favoriteChains")
     .notEmpty()
-    .withMessage("Favorite chains are required")
+    .withMessage("Please select at least one blockchain")
     .isArray()
-    .withMessage("Favorite chains must be an array"),
+    .withMessage("Please select at least one blockchain")
+    .custom((value) => value.length > 0)
+    .withMessage("Please select at least one blockchain"),
   body("favoriteChains.*")
     .isIn([
       "Solana",
@@ -185,16 +189,16 @@ export const registerWaitlistUserValidation = [
       "Bitcoin",
       "Other",
     ])
-    .withMessage("Invalid favorite chain"),
+    .withMessage("Please select valid blockchains"),
   body("publicWallet")
     .optional()
     .isString()
-    .withMessage("Public wallet must be a string"),
+    .withMessage("Please enter a valid wallet address"),
 
   // Purchase behavior
   body("mainReason")
     .notEmpty()
-    .withMessage("Main reason is required")
+    .withMessage("Please select your main reason for joining")
     .isIn([
       "Buy Now, Pay Later (BNPL) with crypto",
       "Earn yield or rewards on purchases",
@@ -206,77 +210,77 @@ export const registerWaitlistUserValidation = [
       "Learn about FlexFi / stay informed",
       "Other",
     ])
-    .withMessage("Invalid main reason"),
+    .withMessage("Please select a valid reason"),
   body("firstPurchase")
     .optional()
     .isString()
-    .withMessage("First purchase must be a string"),
+    .withMessage("Le montant du premier achat n'est pas valide"),
 
   // Marketing
   body("referralCodeUsed")
     .optional()
     .isString()
-    .withMessage("Referral code must be a string"),
+    .withMessage("Le code de parrainage n'est pas valide"),
   body("userReferralCode")
     .optional()
     .isString()
-    .withMessage("User referral code must be a string"),
+    .withMessage("Le code de parrainage utilisateur n'est pas valide"),
   body("utmSource")
     .notEmpty()
-    .withMessage("UTM source is required")
+    .withMessage("La source UTM est requise")
     .isString()
-    .withMessage("UTM source must be a string"),
+    .withMessage("La source UTM n'est pas valide"),
   body("utmMedium")
     .notEmpty()
-    .withMessage("UTM medium is required")
+    .withMessage("Le medium UTM est requis")
     .isString()
-    .withMessage("UTM medium must be a string"),
+    .withMessage("Le medium UTM n'est pas valide"),
   body("utmCampaign")
     .notEmpty()
-    .withMessage("UTM campaign is required")
+    .withMessage("La campagne UTM est requise")
     .isString()
-    .withMessage("UTM campaign must be a string"),
+    .withMessage("La campagne UTM n'est pas valide"),
 
   // Metrics
   body("timeToCompletionSeconds")
     .notEmpty()
     .withMessage("Time to completion is required")
     .isInt({ min: 0 })
-    .withMessage("Time to completion must be a positive integer"),
+    .withMessage("Time to completion must be positive"),
 
   // Consents
   body("consentMarketing")
     .notEmpty()
-    .withMessage("Marketing consent is required")
+    .withMessage("Please indicate your marketing preferences")
     .isBoolean()
-    .withMessage("Marketing consent must be a boolean"),
+    .withMessage("Please select yes or no"),
   body("consentAdult")
     .notEmpty()
-    .withMessage("Adult consent is required")
+    .withMessage("Please confirm you are over 18")
     .isBoolean()
-    .withMessage("Adult consent must be a boolean"),
+    .withMessage("Please select yes or no"),
   body("consent_data_sharing")
     .notEmpty()
-    .withMessage("Data sharing consent is required")
+    .withMessage("Please accept data sharing")
     .isBoolean()
-    .withMessage("Data sharing consent must be a boolean"),
+    .withMessage("Please select yes or no"),
   body("consent_data_sharing_date")
     .notEmpty()
-    .withMessage("Data sharing consent date is required")
+    .withMessage("Acceptance date is required")
     .isISO8601()
-    .withMessage("Data sharing consent date must be a valid ISO date"),
+    .withMessage("Please provide a valid date"),
 
   // Experience
   body("experienceBnplRating")
     .notEmpty()
-    .withMessage("BNPL experience rating is required")
+    .withMessage("Please rate your BNPL experience")
     .isInt({ min: 1, max: 5 })
-    .withMessage("BNPL experience rating must be between 1 and 5"),
+    .withMessage("Please rate between 1 and 5"),
 
   // Timestamp
-  body("signupTimeStamp")
+  body("signupTimestamp")
     .notEmpty()
-    .withMessage("Signup timestamp is required")
+    .withMessage("Signup date is required")
     .isISO8601()
-    .withMessage("Signup timestamp must be a valid ISO date"),
+    .withMessage("Please provide a valid date"),
 ];

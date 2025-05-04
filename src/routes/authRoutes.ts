@@ -41,4 +41,8 @@ router.get("/me", authenticate, authController.getCurrentUser);
 // Route pour récupérer le top 10 des parrainages
 router.get("/top-referrals", authController.getTopReferrals);
 
+// Routes pour récupérer les points et le rang de l'utilisateur
+router.get("/points", authenticate, authController.getUserPoints);
+router.get("/rank", authenticate, authController.getUserRank);
+
 export default router;

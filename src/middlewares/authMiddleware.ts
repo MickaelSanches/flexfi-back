@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt';
-import User from '../models/User';
+import { NextFunction, Request, Response } from "express";
+import { User } from "../models/User";
+import { verifyToken } from "../utils/jwt";
 
 interface DecodedToken {
   id: string;
@@ -17,31 +17,35 @@ export const authenticate = async (
   try {
     // Extraire le token du header Authorization
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ status: 'error', message: 'Authorization token is required' });
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res
+        .status(401)
+        .json({ status: "error", message: "Authorization token is required" });
       return;
     }
-    
-    const token = authHeader.split(' ')[1];
-    
+
+    const token = authHeader.split(" ")[1];
+
     // Vérifier le token
     const decoded = verifyToken(token) as DecodedToken;
-    
+
     // Récupérer l'utilisateur correspondant
     const user = await User.findById(decoded.id);
-    
+
     if (!user) {
-      res.status(401).json({ status: 'error', message: 'User not found' });
+      res.status(401).json({ status: "error", message: "User not found" });
       return;
     }
-    
+
     // Injecter l'utilisateur dans la requête
     req.user = user;
-    
+
     next();
   } catch (error) {
-    res.status(401).json({ status: 'error', message: 'Invalid or expired token' });
+    res
+      .status(401)
+      .json({ status: "error", message: "Invalid or expired token" });
   }
 };
 
@@ -57,6 +61,6 @@ export const adminOnly = (
   if (req.user && (req.user as any).isAdmin) {
     next();
   } else {
-    res.status(403).json({ status: 'error', message: 'Admin access required' });
+    res.status(403).json({ status: "error", message: "Admin access required" });
   }
 };

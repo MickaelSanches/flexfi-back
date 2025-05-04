@@ -1,5 +1,4 @@
-import User, { IUser } from '../models/User';
-import mongoose from 'mongoose';
+import { IUser, User } from "../models/User";
 
 export class UserService {
   // Récupérer un utilisateur par ID
@@ -21,10 +20,7 @@ export class UserService {
   }
 
   // Mettre à jour les informations d'un utilisateur
-  async updateUser(
-    id: string,
-    updates: Partial<IUser>
-  ): Promise<IUser | null> {
+  async updateUser(id: string, updates: Partial<IUser>): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(id, updates, { new: true });
     } catch (error) {
@@ -36,7 +32,7 @@ export class UserService {
   async addWalletToUser(
     userId: string,
     publicKey: string,
-    type: 'connected' | 'created'
+    type: "connected" | "created"
   ): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(
@@ -46,9 +42,9 @@ export class UserService {
             wallets: {
               publicKey,
               type,
-              hasDelegation: false
-            }
-          }
+              hasDelegation: false,
+            },
+          },
         },
         { new: true }
       );
@@ -66,15 +62,15 @@ export class UserService {
   ): Promise<IUser | null> {
     try {
       return await User.findOneAndUpdate(
-        { 
+        {
           _id: userId,
-          'wallets.publicKey': publicKey
+          "wallets.publicKey": publicKey,
         },
         {
           $set: {
-            'wallets.$.hasDelegation': hasDelegation,
-            'wallets.$.delegationExpiry': delegationExpiry
-          }
+            "wallets.$.hasDelegation": hasDelegation,
+            "wallets.$.delegationExpiry": delegationExpiry,
+          },
         },
         { new: true }
       );
@@ -86,7 +82,7 @@ export class UserService {
   // Mettre à jour le statut KYC d'un utilisateur
   async updateKYCStatus(
     userId: string,
-    status: 'none' | 'pending' | 'approved' | 'rejected',
+    status: "none" | "pending" | "approved" | "rejected",
     kycId?: string
   ): Promise<IUser | null> {
     try {
@@ -94,7 +90,7 @@ export class UserService {
         userId,
         {
           kycStatus: status,
-          kycId
+          kycId,
         },
         { new: true }
       );
@@ -106,7 +102,7 @@ export class UserService {
   // Mettre à jour la carte sélectionnée par l'utilisateur
   async updateSelectedCard(
     userId: string,
-    cardType: 'standard' | 'gold' | 'platinum'
+    cardType: "standard" | "gold" | "platinum"
   ): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(
