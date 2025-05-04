@@ -60,6 +60,7 @@ export class AuthController {
         wallets: user.wallets,
         kycStatus: user.kycStatus,
         formFullfilled: user.formFullfilled,
+        userReferralCode: user.userReferralCode,
       };
 
       // Handle referral points

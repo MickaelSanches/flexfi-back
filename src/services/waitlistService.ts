@@ -66,7 +66,7 @@ export class WaitlistService {
   // Get total number of users in the waitlist
   async getWaitlistCount(): Promise<number> {
     try {
-      return await User.countDocuments({ formFullfilled: true });
+      return await User.countDocuments();
     } catch (error) {
       throw InternalError("Failed to get waitlist count");
     }
