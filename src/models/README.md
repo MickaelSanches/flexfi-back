@@ -103,3 +103,29 @@ Models represent the core data entities in the FlexFi platform and are used by s
 - **KYC.ts**: Définit le schéma pour les documents de vérification KYC
 - **Card.ts**: Définit le schéma pour les cartes de paiement virtuelles
 - **Notification.ts**: Définit le schéma pour les notifications utilisateur
+
+## Modèles disponibles
+
+### User
+
+Représente un utilisateur de la plateforme FlexFi.
+
+### Wallet
+
+Représente un portefeuille crypto associé à un utilisateur.
+
+### KYC
+
+Stocke les informations et le statut de vérification KYC d'un utilisateur.
+
+### Card
+
+Gère les informations des cartes virtuelles des utilisateurs.
+
+### Notification
+
+Stocke les notifications envoyées aux utilisateurs.
+
+### LOI
+
+Stocke les informations des Letter of Intent (LOI) soumises par les partenaires commerciaux.

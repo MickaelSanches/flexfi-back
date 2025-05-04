@@ -3,6 +3,7 @@ import waitlistRoutes from "../api/waitlist";
 import authRoutes from "./authRoutes";
 import cardRoutes from "./cardRoutes";
 import kycRoutes from "./kycRoutes";
+import loiRoutes from "./loiRoutes";
 import notificationRoutes from "./notificationRoutes";
 import walletRoutes from "./walletRoutes";
 
@@ -14,5 +15,6 @@ router.use("/kyc", kycRoutes);
 router.use("/card", cardRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/waitlist", waitlistRoutes);
+router.use("/loi", loiRoutes);
 
 export default router;
