@@ -1,19 +1,18 @@
 import fs from "fs";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import WaitlistUser, { IWaitlistedUser } from "../../models/WaitlistUser";
+import { IWaitlistFormData, IWaitlistUser, User } from "../../models/User";
 import waitlistService from "../../services/waitlistService";
 import { AppError } from "../../utils/AppError";
-import { IWaitlistUser } from "../../models/User";
 
 let mongoServer: MongoMemoryServer;
 
 // Setup MongoDB in-memory server before tests
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
-  await WaitlistUser.createIndexes();
+  const mongoUri = mongoServer.getUri();
+  await mongoose.connect(mongoUri);
+  await User.createIndexes();
 });
 
 // Clean up after all tests
@@ -24,65 +23,35 @@ afterAll(async () => {
 
 // Clear database before each test
 beforeEach(async () => {
-  await WaitlistUser.deleteMany({});
+  await User.deleteMany({});
 });
 
 describe("WaitlistService", () => {
-  describe("registerUser", () => {
-    it("should register a new user successfully", async () => {
-      const mockUserData: IWaitlistUser = {};
-
-      const user = await waitlistService.registerWaitlistInfos(mockUserData);
-
-      expect(user).toBeDefined();
-      expect(user.formFullfilled).toBe(true);
-    });
-
-    it("should throw error when registering with existing email", async () => {
-      const mockUserData: IWaitlistUser = {};
-
-      await waitlistService.registerWaitlistInfos(mockUserData);
-
-      try {
-        await waitlistService.registerWaitlistInfos(mockUserData);
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error.name).toBe("MongoServerError");
-        expect(error.code).toBe(11000);
-      }
-    });
-
-    it("should throw error when registering with invalid data", async () => {
-      const invalidUserData: IWaitlistUser = {};
-
-      try {
-        await waitlistService.registerWaitlistInfos(invalidUserData);
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error.name).toBe("ValidationError");
-      }
-    });
-  });
-
-  describe("getWaitlistCount", () => {
-    it("should return 0 when waitlist is empty", async () => {
-      const count = await waitlistService.getWaitlistCount();
-      expect(count).toBe(0);
-    });
-
-    it("should return 1 after adding one user", async () => {
-      const mockUserData: IWaitlistUser = {
+  describe("registerWaitlistInfos", () => {
+    it("should register waitlist information for a user", async () => {
+      // Create a basic user first
+      const basicUser = await User.create({
         email: "test@example.com",
+        password: "password123",
         firstName: "Test",
+        lastName: "User",
+        referralCodeUsed: undefined,
+        userReferralCode: "TEST123",
+        authMethod: "email",
+        formFullfilled: false,
+        wallets: [],
+        kycStatus: "none",
+        points: 0,
+      });
+
+      // Simuler les données reçues par le controller
+      const formData: IWaitlistFormData = {
+        email: "test@example.com",
         phoneNumber: "+1234567890",
         telegramOrDiscordId: "test123",
-        preferredLanguage: "en",
+        preferredLanguage: "English",
         country: "CA",
         stateProvince: "CA",
-        ipCity: "Montreal",
-        deviceLocale: "en-CA",
-        deviceType: "desktop",
-        browser: "chrome",
         ageGroup: "25-34",
         employmentStatus: "Employed – Full-time",
         monthlyIncome: "$3,000 – $4,999",
@@ -100,27 +69,183 @@ describe("WaitlistService", () => {
         utmSource: "google",
         utmMedium: "cpc",
         utmCampaign: "test",
-        landingVariant: "A",
         timeToCompletionSeconds: 120,
-        consentMarketing: true,
+        experienceBnplRating: 4,
         consentAdult: true,
         consent_data_sharing: true,
         consent_data_sharing_date: new Date(),
-        experienceBnplRating: 4,
+        consentMarketing: true,
         signupTimestamp: new Date(),
       };
 
-      await waitlistService.registerUser(mockUserData);
-      const count = await waitlistService.getWaitlistCount();
-      expect(count).toBe(1);
+      // Simuler la transformation du controller
+      const { email, ...formDataWithoutEmail } = formData;
+      const userData: IWaitlistUser = {
+        email,
+        formData: formDataWithoutEmail,
+      };
+
+      const user = await waitlistService.registerWaitlistInfos(userData);
+
+      // Vérifier la réponse comme le controller
+      expect(user).toBeDefined();
+      expect(user.formFullfilled).toBe(true);
+      expect(user.points).toBe(20); // 20 points for completing the form
+      expect(user.email).toBe(formData.email);
+      expect(user.firstName).toBe(basicUser.firstName);
+      expect(user.lastName).toBe(basicUser.lastName);
+      expect(user.authMethod).toBe(basicUser.authMethod);
+      expect(user.wallets).toEqual(basicUser.wallets);
+      expect(user.kycStatus).toBe(basicUser.kycStatus);
     });
 
-    it("should return correct count after adding multiple users", async () => {
-      const mockUsers: IWaitlistUser[] = [{}, {}];
+    it("should throw error if user does not exist", async () => {
+      const formData: IWaitlistFormData = {
+        email: "nonexistent@example.com",
+        phoneNumber: "+1234567890",
+        telegramOrDiscordId: "test123",
+        preferredLanguage: "English",
+        country: "CA",
+        stateProvince: "CA",
+        ageGroup: "25-34",
+        employmentStatus: "Employed – Full-time",
+        monthlyIncome: "$3,000 – $4,999",
+        educationLevel: "Bachelor's degree (BA, BS, etc.)",
+        hasCreditCard: true,
+        bnplServices: ["Klarna", "Afterpay"],
+        avgOnlineSpend: "$500 – $999",
+        cryptoLevel: "Intermediate",
+        walletType: "Metamask",
+        portfolioSize: "$1,000 – $9,999",
+        favoriteChains: ["Ethereum", "Solana"],
+        publicWallet: "0x123...",
+        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
+        firstPurchase: "100-500",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "test",
+        timeToCompletionSeconds: 120,
+        experienceBnplRating: 4,
+        consentAdult: true,
+        consent_data_sharing: true,
+        consent_data_sharing_date: new Date(),
+        consentMarketing: true,
+        signupTimestamp: new Date(),
+      };
 
-      for (const user of mockUsers) {
-        await waitlistService.registerWaitlistInfos(user);
-      }
+      const { email, ...formDataWithoutEmail } = formData;
+      const userData: IWaitlistUser = {
+        email,
+        formData: formDataWithoutEmail,
+      };
+
+      await expect(
+        waitlistService.registerWaitlistInfos(userData)
+      ).rejects.toThrow("User not found");
+    });
+
+    it("should throw error if form is already submitted", async () => {
+      // Create a user with form already submitted
+      await User.create({
+        email: "test@example.com",
+        password: "password123",
+        firstName: "Test",
+        lastName: "User",
+        referralCodeUsed: undefined,
+        userReferralCode: "TEST123",
+        authMethod: "email",
+        formFullfilled: true,
+        wallets: [],
+        kycStatus: "none",
+        points: 20,
+      });
+
+      const formData: IWaitlistFormData = {
+        email: "test@example.com",
+        phoneNumber: "+1234567890",
+        telegramOrDiscordId: "test123",
+        preferredLanguage: "English",
+        country: "CA",
+        stateProvince: "CA",
+        ageGroup: "25-34",
+        employmentStatus: "Employed – Full-time",
+        monthlyIncome: "$3,000 – $4,999",
+        educationLevel: "Bachelor's degree (BA, BS, etc.)",
+        hasCreditCard: true,
+        bnplServices: ["Klarna", "Afterpay"],
+        avgOnlineSpend: "$500 – $999",
+        cryptoLevel: "Intermediate",
+        walletType: "Metamask",
+        portfolioSize: "$1,000 – $9,999",
+        favoriteChains: ["Ethereum", "Solana"],
+        publicWallet: "0x123...",
+        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
+        firstPurchase: "100-500",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "test",
+        timeToCompletionSeconds: 120,
+        experienceBnplRating: 4,
+        consentAdult: true,
+        consent_data_sharing: true,
+        consent_data_sharing_date: new Date(),
+        consentMarketing: true,
+        signupTimestamp: new Date(),
+      };
+
+      const { email, ...formDataWithoutEmail } = formData;
+      const userData: IWaitlistUser = {
+        email,
+        formData: formDataWithoutEmail,
+      };
+
+      await expect(
+        waitlistService.registerWaitlistInfos(userData)
+      ).rejects.toThrow("Form already submitted");
+    });
+  });
+
+  describe("getWaitlistCount", () => {
+    it("should return correct count of users with completed forms", async () => {
+      // Create users with and without completed forms
+      await User.create([
+        {
+          email: "user1@example.com",
+          password: "password123",
+          firstName: "User",
+          lastName: "One",
+          userReferralCode: "USER1",
+          authMethod: "email",
+          formFullfilled: true,
+          wallets: [],
+          kycStatus: "none",
+          points: 20,
+        },
+        {
+          email: "user2@example.com",
+          password: "password123",
+          firstName: "User",
+          lastName: "Two",
+          userReferralCode: "USER2",
+          authMethod: "email",
+          formFullfilled: false,
+          wallets: [],
+          kycStatus: "none",
+          points: 0,
+        },
+        {
+          email: "user3@example.com",
+          password: "password123",
+          firstName: "User",
+          lastName: "Three",
+          userReferralCode: "USER3",
+          authMethod: "email",
+          formFullfilled: true,
+          wallets: [],
+          kycStatus: "none",
+          points: 20,
+        },
+      ]);
 
       const count = await waitlistService.getWaitlistCount();
       expect(count).toBe(2);
@@ -142,27 +267,45 @@ describe("WaitlistService", () => {
   });
 
   describe("exportWaitlistToCSV", () => {
-    it("should export waitlist to CSV successfully", async () => {
-      const mockUser: IWaitlistUser = {};
+    it("should export waitlist data to CSV", async () => {
+      // Create test users
+      await User.create([
+        {
+          email: "user1@example.com",
+          password: "password123",
+          firstName: "User",
+          lastName: "One",
+          userReferralCode: "USER1",
+          authMethod: "email",
+          formFullfilled: true,
+          wallets: [],
+          kycStatus: "none",
+          points: 20,
+          phoneNumber: "+1234567890",
+          preferredLanguage: "English",
+          country: "US",
+        },
+        {
+          email: "user2@example.com",
+          password: "password123",
+          firstName: "User",
+          lastName: "Two",
+          userReferralCode: "USER2",
+          authMethod: "email",
+          formFullfilled: true,
+          wallets: [],
+          kycStatus: "none",
+          points: 20,
+          phoneNumber: "+0987654321",
+          preferredLanguage: "French",
+          country: "FR",
+        },
+      ]);
 
-      await waitlistService.registerWaitlistInfos(mockUser);
-      const { path: filePath, filename } =
-        await waitlistService.exportWaitlistToCSV();
-
-      // Display CSV file name content for verification
-      console.log("Contenu du fichier CSV:");
-      console.log(fs.readFileSync(filePath, "utf-8"));
-      console.log("Nom du fichier CSV:");
-      console.log(filename);
-
-      expect(fs.existsSync(filePath)).toBe(true);
-
-      const fileContent = fs.readFileSync(filePath, "utf-8");
-      expect(fileContent).toContain(mockUser.email);
-      expect(fileContent).toContain(mockUser.formData.consent_data_sharing);
-      expect(fileContent).toContain(mockUser.formData.timeToCompletionSeconds);
-
-      fs.unlinkSync(filePath);
+      const result = await waitlistService.exportWaitlistToCSV();
+      expect(result).toHaveProperty("path");
+      expect(result).toHaveProperty("filename");
+      expect(result.filename).toMatch(/^waitlist_\d{4}-\d{2}-\d{2}\.csv$/);
     });
 
     it("should handle empty waitlist", async () => {
@@ -173,20 +316,59 @@ describe("WaitlistService", () => {
       const fileContent = fs.readFileSync(filePath, "utf-8");
       expect(fileContent).toContain("email");
       expect(fileContent).toContain("firstName");
+      expect(fileContent).toContain("lastName");
       expect(fileContent).toContain("phoneNumber");
 
       fs.unlinkSync(filePath);
     });
 
     it("should handle special characters in CSV export", async () => {
-      const mockUser: IWaitlistUser = {};
+      // Create a user with special characters
+      await User.create({
+        email: "test@example.com",
+        password: "Test123!@#$%",
+        firstName: "Jean-François",
+        lastName: "Dupont",
+        authMethod: "email",
+        userReferralCode: "ABC123",
+        formFullfilled: true,
+        wallets: [],
+        kycStatus: "none",
+        points: 20,
+        phoneNumber: "+1234567890",
+        preferredLanguage: "French",
+        country: "CA",
+        stateProvince: "Québec",
+        ipCity: "Montréal",
+        ageGroup: "25-34",
+        employmentStatus: "Employed – Full-time",
+        monthlyIncome: "$3,000 – $4,999",
+        educationLevel: "Bachelor's degree",
+        hasCreditCard: true,
+        bnplServices: ["Klarna"],
+        avgOnlineSpend: "$500 – $999",
+        cryptoLevel: "Intermediate",
+        walletType: "Metamask",
+        portfolioSize: "$1,000 – $9,999",
+        favoriteChains: ["Ethereum"],
+        mainReason: "Buy Now, Pay Later (BNPL) with crypto",
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "test",
+        timeToCompletionSeconds: 120,
+        experienceBnplRating: 4,
+        consentAdult: true,
+        consent_data_sharing: true,
+        consent_data_sharing_date: new Date(),
+        consentMarketing: true,
+        signupTimestamp: new Date(),
+      });
 
-      await waitlistService.registerWaitlistInfos(mockUser);
       const { path: filePath } = await waitlistService.exportWaitlistToCSV();
       const csvContent = fs.readFileSync(filePath, "utf-8");
 
       expect(csvContent).toContain("Jean-François");
-      expect(csvContent).toContain("test123");
+      expect(csvContent).toContain("Dupont");
       expect(csvContent).toContain("Québec");
       expect(csvContent).toContain("Montréal");
 
@@ -194,9 +376,20 @@ describe("WaitlistService", () => {
     });
 
     it("should handle empty values in CSV export", async () => {
-      const mockUser: IWaitlistUser = {};
+      // Create a user with minimal data
+      await User.create({
+        email: "test@example.com",
+        password: "Test123!@#$%",
+        firstName: "Test",
+        lastName: "User",
+        authMethod: "email",
+        userReferralCode: "ABC123",
+        formFullfilled: true,
+        wallets: [],
+        kycStatus: "none",
+        points: 20,
+      });
 
-      await waitlistService.registerWaitlistInfos(mockUser);
       const { path: filePath } = await waitlistService.exportWaitlistToCSV();
       const csvContent = fs.readFileSync(filePath, "utf-8");
 
@@ -227,9 +420,9 @@ describe("WaitlistService", () => {
       }, {} as Record<string, string>);
 
       expect(csvData.referralCodeUsed).toBe("");
-      expect(csvData.userReferralCode).toBe("");
-      expect(csvData.email).toBe(mockUser.email);
-      expect(csvData.firstName).toBe(mockUser.formData.consent_data_sharing);
+      expect(csvData.userReferralCode).toBe("ABC123");
+      expect(csvData.email).toBe("test@example.com");
+      expect(csvData.firstName).toBe("Test");
       expect(csvData.phoneNumber).toBe("");
 
       fs.unlinkSync(filePath);

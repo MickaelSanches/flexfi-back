@@ -1,6 +1,4 @@
-import User, { IUser } from '../models/User';
-import mongoose from 'mongoose';
-import { AppError } from '../utils/AppError';
+import { IUser, User } from "../models/User";
 
 export class UserService {
   // Récupérer un utilisateur par ID
@@ -22,10 +20,7 @@ export class UserService {
   }
 
   // Mettre à jour les informations d'un utilisateur
-  async updateUser(
-    id: string,
-    updates: Partial<IUser>
-  ): Promise<IUser | null> {
+  async updateUser(id: string, updates: Partial<IUser>): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(id, updates, { new: true });
     } catch (error) {
@@ -37,7 +32,7 @@ export class UserService {
   async addWalletToUser(
     userId: string,
     publicKey: string,
-    type: 'connected' | 'created'
+    type: "connected" | "created"
   ): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(
@@ -47,9 +42,9 @@ export class UserService {
             wallets: {
               publicKey,
               type,
-              hasDelegation: false
-            }
-          }
+              hasDelegation: false,
+            },
+          },
         },
         { new: true }
       );
@@ -67,15 +62,15 @@ export class UserService {
   ): Promise<IUser | null> {
     try {
       return await User.findOneAndUpdate(
-        { 
+        {
           _id: userId,
-          'wallets.publicKey': publicKey
+          "wallets.publicKey": publicKey,
         },
         {
           $set: {
-            'wallets.$.hasDelegation': hasDelegation,
-            'wallets.$.delegationExpiry': delegationExpiry
-          }
+            "wallets.$.hasDelegation": hasDelegation,
+            "wallets.$.delegationExpiry": delegationExpiry,
+          },
         },
         { new: true }
       );
@@ -87,7 +82,7 @@ export class UserService {
   // Mettre à jour le statut KYC d'un utilisateur
   async updateKYCStatus(
     userId: string,
-    status: 'none' | 'pending' | 'approved' | 'rejected',
+    status: "none" | "pending" | "approved" | "rejected",
     kycId?: string
   ): Promise<IUser | null> {
     try {
@@ -95,7 +90,7 @@ export class UserService {
         userId,
         {
           kycStatus: status,
-          kycId
+          kycId,
         },
         { new: true }
       );
@@ -107,7 +102,7 @@ export class UserService {
   // Mettre à jour la carte sélectionnée par l'utilisateur
   async updateSelectedCard(
     userId: string,
-    cardType: 'standard' | 'gold' | 'platinum'
+    cardType: "standard" | "gold" | "platinum"
   ): Promise<IUser | null> {
     try {
       return await User.findByIdAndUpdate(
@@ -115,48 +110,6 @@ export class UserService {
         { selectedCard: cardType },
         { new: true }
       );
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Récupérer les points d'un utilisateur
-  async getUserPoints(userId: string): Promise<number> {
-    try {
-      const user = await User.findById(userId);
-      if (!user) {
-        throw new AppError('User not found', 404);
-      }
-      return user.points || 0;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Récupérer le rang d'un utilisateur
-  async getUserRank(userId: string): Promise<{ rank: number, totalUsers: number, points: number }> {
-    try {
-      const user = await User.findById(userId);
-      if (!user) {
-        throw new AppError('User not found', 404);
-      }
-      
-      // Récupérer le nombre d'utilisateurs ayant plus de points
-      const usersWithMorePoints = await User.countDocuments({
-        points: { $gt: user.points }
-      });
-      
-      // Le rang = nombre d'utilisateurs ayant plus de points + 1
-      const rank = usersWithMorePoints + 1;
-      
-      // Nombre total d'utilisateurs
-      const totalUsers = await User.countDocuments();
-      
-      return {
-        rank,
-        totalUsers,
-        points: user.points || 0
-      };
     } catch (error) {
       throw error;
     }

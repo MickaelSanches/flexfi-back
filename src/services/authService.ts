@@ -191,6 +191,53 @@ export class AuthService {
       throw InternalError(`Failed to get top referrals: ${error.message}`);
     }
   }
+
+  // Récupérer un utilisateur par son ID
+  async getUserById(userId: string): Promise<IUser> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw NotFoundError("User not found");
+      }
+      return user;
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw InternalError(`Failed to get user: ${error.message}`);
+    }
+  }
+
+  // Récupérer les points d'un utilisateur
+  async getUserPoints(userId: string): Promise<number> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw NotFoundError("User not found");
+      }
+      return user.points || 0;
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw InternalError(`Failed to get user points: ${error.message}`);
+    }
+  }
+
+  // Récupérer le rang d'un utilisateur
+  async getUserRank(userId: string): Promise<number> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw NotFoundError("User not found");
+      }
+
+      // Compter le nombre d'utilisateurs avec plus de points
+      const rank = await User.countDocuments({
+        points: { $gt: user.points || 0 },
+      });
+      return rank + 1; // +1 car le rang commence à 1
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw InternalError(`Failed to get user rank: ${error.message}`);
+    }
+  }
 }
 
 export default new AuthService();

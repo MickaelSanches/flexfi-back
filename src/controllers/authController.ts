@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { IBasicUser, IUser } from "../models/User";
 import authService from "../services/authService";
-import userService from "../services/userService";
 import logger from "../utils/logger";
 
 export class AuthController {
@@ -61,7 +60,6 @@ export class AuthController {
         wallets: user.wallets,
         kycStatus: user.kycStatus,
         formFullfilled: user.formFullfilled,
-        userReferralCode: user.userReferralCode,
       };
 
       // Handle referral points
@@ -251,11 +249,21 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      // req.user est injecté par le middleware d'authentification
-      const user = req.user;
+      const userId = (req.user as any)?._id;
+      if (!userId) {
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
+        });
+        return;
+      }
 
+      const user = await authService.getUserById(userId.toString());
       if (!user) {
-        res.status(401).json({ status: "error", message: "Not authenticated" });
+        res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
         return;
       }
 
@@ -264,7 +272,6 @@ export class AuthController {
         data: { user },
       });
     } catch (error) {
-      // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
     }
   }
@@ -305,26 +312,25 @@ export class AuthController {
   }
 
   // Récupérer les points de l'utilisateur
-  async getUserPoints(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getUserPoints(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const user = req.user as any;
-      const userId = user?._id;
-      
+      const userId = (req.user as any)?._id;
       if (!userId) {
-        res.status(401).json({ 
-          status: 'error', 
-          message: 'Unauthorized' 
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
         });
         return;
       }
-      
-      const points = await userService.getUserPoints(userId.toString());
-      
+
+      const points = await authService.getUserPoints(userId.toString());
       res.status(200).json({
-        status: 'success',
-        data: {
-          points
-        }
+        status: "success",
+        data: { points },
       });
     } catch (error) {
       next(error);
@@ -332,24 +338,25 @@ export class AuthController {
   }
 
   // Récupérer le rang de l'utilisateur
-  async getUserRank(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getUserRank(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const user = req.user as any;
-      const userId = user?._id;
-      
+      const userId = (req.user as any)?._id;
       if (!userId) {
-        res.status(401).json({ 
-          status: 'error', 
-          message: 'Unauthorized' 
+        res.status(401).json({
+          status: "error",
+          message: "Not authenticated",
         });
         return;
       }
-      
-      const rankInfo = await userService.getUserRank(userId.toString());
-      
+
+      const rank = await authService.getUserRank(userId.toString());
       res.status(200).json({
-        status: 'success',
-        data: rankInfo
+        status: "success",
+        data: { rank },
       });
     } catch (error) {
       next(error);
