@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
-import { IWaitlistFormData, IWaitlistUser } from "../models/User";
+import { IWaitlistFormData, IWaitlistUser, UserDocument } from "../models/User";
 import waitlistService from "../services/waitlistService";
 
 export class WaitlistController {
@@ -20,7 +20,8 @@ export class WaitlistController {
         formData: formDataWithoutEmail,
       };
 
-      const updatedUser = await waitlistService.registerWaitlistInfos(userData);
+      const updatedUser: UserDocument =
+        await waitlistService.registerWaitlistInfos(userData);
 
       const userResponse = {
         _id: updatedUser._id,
@@ -28,10 +29,11 @@ export class WaitlistController {
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         authMethod: updatedUser.authMethod,
+        userReferralCode: updatedUser.userReferralCode,
         wallets: updatedUser.wallets,
         kycStatus: updatedUser.kycStatus,
         formFullfilled: updatedUser.formFullfilled,
-        points: updatedUser.points,
+        flexpoints_total: updatedUser.flexpoints_total,
       };
 
       res.status(201).json({

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IBasicUser, IUser } from "../models/User";
+import { IBasicUser, UserDocument } from "../models/User";
 import authService from "../services/authService";
 import logger from "../utils/logger";
 
@@ -37,7 +37,7 @@ export class AuthController {
       const deviceLocale =
         req.headers["accept-language"]?.toString() || undefined;
 
-      const { user, token }: { user: IUser; token: string } =
+      const { user, token }: { user: UserDocument; token: string } =
         await authService.registerWithEmail(
           email,
           password,
@@ -292,7 +292,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        points: user.points,
+        points: user.flexpoints_total,
         userReferralCode: user.userReferralCode,
       }));
 
@@ -319,7 +319,7 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const userId = (req.user as any)?._id;
+      const userId = (req.user as UserDocument)?._id;
       if (!userId) {
         res.status(401).json({
           status: "error",

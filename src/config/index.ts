@@ -1,7 +1,7 @@
-import env from './env';
-import kycConfig from './kyc';
-import { authConfig } from './auth';
-import { solanaConfig } from './solana';
+import { authConfig } from "./auth";
+import env from "./env";
+import kycConfig from "./kyc";
+import { solanaConfig } from "./solana";
 
 const config = {
   env,
@@ -10,4 +10,4 @@ const config = {
   solana: solanaConfig,
 };
 
-export default config; 
+export default config;

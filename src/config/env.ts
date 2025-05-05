@@ -1,45 +1,91 @@
-import dotenv from 'dotenv';
-import { cleanEnv, str, port, url } from 'envalid';
+import dotenv from "dotenv";
+import { cleanEnv, port, str, url } from "envalid";
 
-// Charger les variables d'environnement
+// ==========================================
+// Chargement des variables d'environnement
+// ==========================================
 dotenv.config();
 
-// Valider les variables d'environnement
+// ==========================================
+// Validation des variables d'environnement
+// ==========================================
 const env = cleanEnv(process.env, {
-  // Server
+  // ==========================================
+  // Configuration Serveur
+  // ==========================================
   PORT: port({ default: 3000 }),
-  NODE_ENV: str({ choices: ['development', 'test', 'production'], default: 'development' }),
-  
-  // MongoDB
+  NODE_ENV: str({
+    choices: ["development", "test", "production"],
+    default: "development",
+  }),
+
+  // ==========================================
+  // Configuration Base de données
+  // ==========================================
   MONGODB_URI: url(),
-  
-  // Authentication
+
+  // ==========================================
+  // Configuration Authentification
+  // ==========================================
   JWT_SECRET: str(),
-  JWT_EXPIRES_IN: str({ default: '7d' }),
-  
-  // Encryption
+  JWT_EXPIRES_IN: str({ default: "7d" }),
+
+  // ==========================================
+  // Configuration Chiffrement
+  // ==========================================
   ENCRYPTION_KEY: str(),
-  
-  // Solana
-  SOLANA_RPC_URL: url({ default: 'https://api.devnet.solana.com' }),
-  SOLANA_NETWORK: str({ choices: ['devnet', 'testnet', 'mainnet-beta'], default: 'devnet' }),
-  FLEXFI_DELEGATE_PUBKEY: str({ default: '' }),
-  FLEXFI_DELEGATE_PRIVATE_KEY: str({ default: '' }),
-  
-  // OAuth (optionnels pour le développement)
-  GOOGLE_CLIENT_ID: str({ default: '' }),
-  GOOGLE_CLIENT_SECRET: str({ default: '' }),
-  GOOGLE_CALLBACK_URL: str({ default: 'http://localhost:3000/api/auth/google/callback' }),
-  
-  APPLE_CLIENT_ID: str({ default: '' }),
-  APPLE_TEAM_ID: str({ default: '' }),
-  APPLE_KEY_ID: str({ default: '' }),
-  APPLE_PRIVATE_KEY_LOCATION: str({ default: '' }),
-  APPLE_CALLBACK_URL: str({ default: 'http://localhost:3000/api/auth/apple/callback' }),
-  
-  TWITTER_CONSUMER_KEY: str({ default: '' }),
-  TWITTER_CONSUMER_SECRET: str({ default: '' }),
-  TWITTER_CALLBACK_URL: str({ default: 'http://localhost:3000/api/auth/twitter/callback' }),
+
+  // ==========================================
+  // Configuration Solana
+  // ==========================================
+  SOLANA_RPC_URL: url({ default: "https://api.devnet.solana.com" }),
+  SOLANA_NETWORK: str({
+    choices: ["devnet", "testnet", "mainnet-beta"],
+    default: "devnet",
+  }),
+  FLEXFI_DELEGATE_PUBKEY: str({ default: "" }),
+  FLEXFI_DELEGATE_PRIVATE_KEY: str({ default: "" }),
+
+  // ==========================================
+  // Configuration OAuth - Google
+  // ==========================================
+  GOOGLE_CLIENT_ID: str({ default: "" }),
+  GOOGLE_CLIENT_SECRET: str({ default: "" }),
+  GOOGLE_CALLBACK_URL: str({
+    default: "http://localhost:3000/api/auth/google/callback",
+  }),
+
+  // ==========================================
+  // Configuration OAuth - Apple
+  // ==========================================
+  APPLE_CLIENT_ID: str({ default: "" }),
+  APPLE_TEAM_ID: str({ default: "" }),
+  APPLE_KEY_ID: str({ default: "" }),
+  APPLE_PRIVATE_KEY_LOCATION: str({ default: "" }),
+  APPLE_CALLBACK_URL: str({
+    default: "http://localhost:3000/api/auth/apple/callback",
+  }),
+
+  // ==========================================
+  // Configuration OAuth - Twitter
+  // ==========================================
+  TWITTER_CONSUMER_KEY: str({ default: "" }),
+  TWITTER_CONSUMER_SECRET: str({ default: "" }),
+  TWITTER_CALLBACK_URL: str({
+    default: "http://localhost:3000/api/auth/twitter/callback",
+  }),
+
+  // ==========================================
+  // Configuration OAuth - Zealy
+  // ==========================================
+  ZEALY_CLIENT_ID: str({ default: "" }),
+  ZEALY_CLIENT_SECRET: str({ default: "" }),
+  ZEALY_REDIRECT_URI: str({
+    default: "http://localhost:3000/api/zealy/callback",
+  }),
+  ZEALY_API_KEY: str({ default: "" }),
+  ZEALY_COMMUNITY_ID: str({ default: "" }),
+  ZEALY_API_URL: url({ default: "https://api-v2.zealy.io" }),
 });
 
 export default env;

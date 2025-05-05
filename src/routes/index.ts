@@ -1,5 +1,6 @@
 import { Router } from "express";
 import waitlistRoutes from "../api/waitlist";
+import zealyRoutes from "../api/zealy";
 import authRoutes from "./authRoutes";
 import cardRoutes from "./cardRoutes";
 import kycRoutes from "./kycRoutes";
@@ -16,5 +17,6 @@ router.use("/card", cardRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/waitlist", waitlistRoutes);
 router.use("/loi", loiRoutes);
+router.use("/zealy", zealyRoutes);
 
 export default router;
