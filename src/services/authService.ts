@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
 } from "../utils/AppError";
 import { generateToken } from "../utils/jwt";
+import brevoService from "./brevoService";
 
 export class AuthService {
   // Inscription avec email/mot de passe
@@ -66,6 +67,9 @@ export class AuthService {
           }
         );
       }
+
+      //  Envoie le mail avec le code de vérification
+      await brevoService.sendVerificationEmail(user.email);
 
       return { user, token, verificationCode };
     } catch (error: any) {
@@ -265,10 +269,17 @@ export class AuthService {
     if (!user) {
       throw new Error("User not found");
     }
-
-    if (user.verificationCode !== code) {
+    console.log(
+      "Stored code:",
+      user.verificationCode,
+      typeof user.verificationCode
+    );
+    console.log("Verifying user with ID:", id, "and code:", code);
+    if (String(user.verificationCode) !== String(code)) {
       throw new Error("Invalid verification code");
     }
+
+    console.log("PASSED COMPARISON, user verified");
 
     user.isVerified = true;
     user.verificationCode = "";

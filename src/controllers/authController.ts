@@ -80,6 +80,29 @@ export class AuthController {
     }
   }
 
+  async activateAccountViaLink(req: Request, res: Response): Promise<void> {
+    try {
+      // Récupération sécurisée des paramètres de query
+      const id = req.query.id?.toString();
+      const token = req.query.token?.toString();
+
+      // Vérification des paramètres
+      if (!id || !token) {
+        res.status(400).json({ error: "Missing id or token" });
+        return;
+      }
+
+      // Appel du service pour vérification
+      await authService.verifyVerificationCode(id, token);
+
+      // Succès
+      res.status(200).json({ message: "Account activated successfully" });
+    } catch (error) {
+      console.error("Activation error:", error);
+      res.status(400).json({ error: "Invalid or expired activation link" });
+    }
+  }
+
   // Connexion avec email/mot de passe
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
