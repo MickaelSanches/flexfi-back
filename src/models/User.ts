@@ -19,6 +19,7 @@ export interface IUser {
   lastName: string | undefined;
   referralCodeUsed: string | undefined;
   userReferralCode: string;
+  verificationCode: string;
   deviceType: string | undefined;
   browser: string | undefined;
   ipCity: string | undefined;
@@ -114,6 +115,7 @@ export interface IUserDataToExport extends Document {
   lastName: string | undefined;
   referralCodeUsed: string | undefined;
   userReferralCode: string;
+  verificationCode: string;
   authMethod: "email" | "google" | "apple" | "twitter";
   googleId: string | undefined;
   appleId: string | undefined;
@@ -169,6 +171,9 @@ export type UserSchemaType = {
   lastName?: string;
   referralCodeUsed?: string;
   userReferralCode: string;
+  verificationCode: string;
+  isVerified: boolean;
+  resetToken: string;
   authMethod: "email" | "google" | "apple" | "twitter";
   googleId?: string;
   appleId?: string;
@@ -239,6 +244,9 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true },
     referralCodeUsed: { type: String, required: false },
     userReferralCode: { type: String, required: true },
+    verificationCode: { type: String, required: true },
+    isVerified: { type: Boolean, required: true, default: false },
+    resetToken: { type: String, required: false },
     authMethod: {
       type: String,
       enum: ["email", "google", "apple", "twitter"],

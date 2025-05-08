@@ -86,6 +86,13 @@ const env = cleanEnv(process.env, {
   ZEALY_API_KEY: str({ default: "" }),
   ZEALY_COMMUNITY_ID: str({ default: "" }),
   ZEALY_API_URL: url({ default: "https://api-v2.zealy.io" }),
+
+  // ==========================================
+  // Configuration Brevo
+  // ==========================================
+  BREVO_API_KEY: str({ default: "" }),
+  BREVO_TEMPLATE_SIGNUP_ID: str({ default: "" }),
+  BREVO_TEMPLATE_RESET_PASSWORD_ID: str({ default: "" }),
 });
 
 export default env;

@@ -7,7 +7,6 @@ import kycRoutes from "./kycRoutes";
 import loiRoutes from "./loiRoutes";
 import notificationRoutes from "./notificationRoutes";
 import walletRoutes from "./walletRoutes";
-
 const router = Router();
 
 router.use("/auth", authRoutes);

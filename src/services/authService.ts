@@ -1,4 +1,3 @@
-import { Document } from "mongoose";
 import { User, UserDocument } from "../models/User";
 import {
   AppError,
@@ -17,11 +16,12 @@ export class AuthService {
     firstName?: string,
     lastName?: string,
     referralCodeUsed?: string,
+    isVerified?: boolean,
     deviceType?: string,
     browser?: string,
     ipCity?: string,
     deviceLocale?: string
-  ): Promise<{ user: UserDocument; token: string }> {
+  ): Promise<{ user: UserDocument; token: string; verificationCode: string }> {
     try {
       // Vérifier si l'utilisateur existe déjà
       const existingUser = await User.findOne({ email });
@@ -31,15 +31,18 @@ export class AuthService {
 
       // Créer un referral code
       const referralCode = await this.generateUniqueReferralCode();
+      const verificationCode = await this.generateVerificationCode();
       // Créer un nouvel utilisateur
       const user = new User({
         email: email.toLowerCase(),
         password: password,
         firstName: firstName?.toLowerCase(),
         lastName: lastName?.toLowerCase(),
+        isVerified: isVerified,
         authMethod: "email",
         referralCodeUsed: referralCodeUsed?.toUpperCase(),
         userReferralCode: referralCode.toUpperCase(),
+        verificationCode: verificationCode,
         deviceType: deviceType,
         browser: browser,
         ipCity: ipCity,
@@ -64,7 +67,7 @@ export class AuthService {
         );
       }
 
-      return { user, token };
+      return { user, token, verificationCode };
     } catch (error: any) {
       // Propager l'erreur AppError
       if (error instanceof AppError) throw error;
@@ -118,6 +121,7 @@ export class AuthService {
       user = await User.findOne(query);
 
       if (!user) {
+        const verificationCode = await this.generateVerificationCode();
         // Créer un nouvel utilisateur
         user = new User({
           email: profile.email,
@@ -126,25 +130,25 @@ export class AuthService {
           lastName:
             profile.lastName || profile.family_name || profile.name?.familyName,
           authMethod,
+          verificationCode: verificationCode,
         });
 
         // Ajouter l'ID spécifique au provider
-        if (authMethod === "google") user.toObject().googleId = profile.id;
-        else if (authMethod === "apple") user.toObject().appleId = profile.id;
-        else if (authMethod === "twitter")
-          user.toObject().twitterId = profile.id;
+        if (authMethod === "google") user.googleId = profile.id;
+        else if (authMethod === "apple") user.appleId = profile.id;
+        else if (authMethod === "twitter") user.twitterId = profile.id;
 
         await user.save();
       } else {
         // Mettre à jour l'ID si l'utilisateur existe mais n'a pas encore cet ID
-        if (authMethod === "google" && !user.toObject().googleId) {
-          user.toObject().googleId = profile.id;
+        if (authMethod === "google" && !user.googleId) {
+          user.googleId = profile.id;
           await user.save();
-        } else if (authMethod === "apple" && !user.toObject().appleId) {
-          user.toObject().appleId = profile.id;
+        } else if (authMethod === "apple" && !user.appleId) {
+          user.appleId = profile.id;
           await user.save();
-        } else if (authMethod === "twitter" && !user.toObject().twitterId) {
-          user.toObject().twitterId = profile.id;
+        } else if (authMethod === "twitter" && !user.twitterId) {
+          user.twitterId = profile.id;
           await user.save();
         }
       }
@@ -254,6 +258,39 @@ export class AuthService {
       if (error instanceof AppError) throw error;
       throw InternalError(`Failed to get user rank: ${error.message}`);
     }
+  }
+
+  async verifyVerificationCode(id: string, code: string): Promise<void> {
+    const user = await User.findOne({ _id: id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.verificationCode !== code) {
+      throw new Error("Invalid verification code");
+    }
+
+    user.isVerified = true;
+    user.verificationCode = "";
+    await user.save();
+  }
+
+  async verifyResetPasswordAndToken(
+    resetToken: string,
+    password: string
+  ): Promise<void> {
+    const user = await User.findOne({ resetToken: resetToken });
+    if (!user) {
+      throw new Error("Invalid reset token");
+    }
+    user.password = password;
+    user.resetToken = "";
+    await user.save();
+  }
+
+  async generateVerificationCode(): Promise<string> {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    return code;
   }
 }
 
