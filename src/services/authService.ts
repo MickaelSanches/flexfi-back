@@ -286,6 +286,23 @@ export class AuthService {
     await user.save();
   }
 
+  async resendVerificationEmail(email: string): Promise<void> {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      throw NotFoundError("User not found");
+    }
+
+    if (user.isVerified) {
+      throw ConflictError("User is already verified");
+    }
+
+    const newCode = await this.generateVerificationCode();
+    user.verificationCode = newCode;
+    await user.save();
+
+    await brevoService.sendVerificationEmail(user.email);
+  }
+
   async verifyResetPasswordAndToken(
     resetToken: string,
     password: string

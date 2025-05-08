@@ -63,6 +63,7 @@ export class AuthController {
         kycStatus: user.kycStatus,
         formFullfilled: user.formFullfilled,
         userReferralCode: user.userReferralCode,
+        isVerified: user.isVerified,
       };
 
       // Handle referral points
@@ -103,6 +104,26 @@ export class AuthController {
     }
   }
 
+  async resendVerificationEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ error: "Email is required" });
+        return;
+      }
+
+      await authService.resendVerificationEmail(email);
+      res
+        .status(200)
+        .json({ message: "Verification email resent successfully" });
+    } catch (error) {
+      res.status(400).json({
+        error:
+          (error as Error).message || "Failed to resend verification email",
+      });
+    }
+  }
+
   // Connexion avec email/mot de passe
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -130,6 +151,7 @@ export class AuthController {
         selectedCard: user.selectedCard,
         formFullfilled: user.formFullfilled,
         userReferralCode: user.userReferralCode,
+        isVerified: user.isVerified,
       };
 
       // Logger la connexion réussie
