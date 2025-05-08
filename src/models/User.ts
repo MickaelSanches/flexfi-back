@@ -11,29 +11,22 @@ export interface IBasicUser {
   referralCodeUsed: string | undefined;
 }
 
-// What Controller send to Service
-export interface IUser extends Document {
+// What authController send to authService
+export interface IUser {
   email: string;
   password: string;
   firstName: string | undefined;
   lastName: string | undefined;
   referralCodeUsed: string | undefined;
   userReferralCode: string;
-  authMethod: "email" | "google" | "apple" | "twitter";
-  googleId: string | undefined;
-  appleId: string | undefined;
-  twitterId: string | undefined;
-  wallets: IWallet[];
-  kycStatus: "none" | "pending" | "approved" | "rejected";
-  kycId: string | undefined;
-  selectedCard: string | undefined;
-  formFullfilled: boolean;
-  points: number;
+  verificationCode: string;
   deviceType: string | undefined;
   browser: string | undefined;
   ipCity: string | undefined;
   deviceLocale: string | undefined;
-  comparePassword(candidatePassword: string): Promise<boolean>;
+  flexpoints_native: number;
+  flexpoints_zealy: number;
+  flexpoints_total: number;
 }
 
 // What Backend send to Frontend
@@ -122,6 +115,7 @@ export interface IUserDataToExport extends Document {
   lastName: string | undefined;
   referralCodeUsed: string | undefined;
   userReferralCode: string;
+  verificationCode: string;
   authMethod: "email" | "google" | "apple" | "twitter";
   googleId: string | undefined;
   appleId: string | undefined;
@@ -169,6 +163,78 @@ export interface IUserDataToExport extends Document {
   updatedAt: Date;
 }
 
+// Type basé sur le schéma
+export type UserSchemaType = {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  referralCodeUsed?: string;
+  userReferralCode: string;
+  verificationCode: string;
+  isVerified: boolean;
+  resetToken: string;
+  authMethod: "email" | "google" | "apple" | "twitter";
+  googleId?: string;
+  appleId?: string;
+  twitterId?: string;
+  wallets: Array<{
+    publicKey: string;
+    type: "connected" | "created";
+    hasDelegation: boolean;
+    delegationExpiry?: Date;
+  }>;
+  kycStatus: "none" | "pending" | "approved" | "rejected";
+  kycId?: string;
+  selectedCard?: string;
+  formFullfilled: boolean;
+  deviceType?: string;
+  browser?: string;
+  ipCity?: string;
+  deviceLocale?: string;
+  phoneNumber?: string;
+  telegramOrDiscordId?: string;
+  preferredLanguage?: string;
+  country?: string;
+  stateProvince?: string;
+  ageGroup?: string;
+  employmentStatus?: string;
+  monthlyIncome?: string;
+  educationLevel?: string;
+  hasCreditCard?: boolean;
+  bnplServices?: string[];
+  avgOnlineSpend?: string;
+  cryptoLevel?: string;
+  walletType?: string;
+  portfolioSize?: string;
+  favoriteChains?: string[];
+  publicWallet?: string;
+  mainReason?: string;
+  firstPurchase?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  timeToCompletionSeconds?: number;
+  experienceBnplRating?: number;
+  consentAdult?: boolean;
+  consent_data_sharing?: boolean;
+  consent_data_sharing_date?: Date;
+  consentMarketing?: boolean;
+  signupTimestamp?: Date;
+  zealy_id?: string;
+  discord_handle?: string;
+  flexpoints_zealy: number;
+  flexpoints_native: number;
+  flexpoints_total: number;
+  createdAt: Date;
+  updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+};
+
+// Type pour le document Mongoose
+export type UserDocument = Document<unknown, {}, UserSchemaType> &
+  UserSchemaType;
+
 // Schema in database
 const UserSchema: Schema = new Schema(
   {
@@ -178,6 +244,9 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true },
     referralCodeUsed: { type: String, required: false },
     userReferralCode: { type: String, required: true },
+    verificationCode: { type: String, required: true },
+    isVerified: { type: Boolean, required: true, default: false },
+    resetToken: { type: String, required: false },
     authMethod: {
       type: String,
       enum: ["email", "google", "apple", "twitter"],
@@ -203,7 +272,6 @@ const UserSchema: Schema = new Schema(
     kycId: { type: String, required: false },
     selectedCard: { type: String, required: false },
     formFullfilled: { type: Boolean, required: true, default: false },
-    points: { type: Number, required: true, default: 0 },
     deviceType: { type: String, required: false },
     browser: { type: String, required: false },
     ipCity: { type: String, required: false },
@@ -237,12 +305,17 @@ const UserSchema: Schema = new Schema(
     consent_data_sharing_date: { type: Date, required: false },
     consentMarketing: { type: Boolean, required: false },
     signupTimestamp: { type: Date, required: false },
+    zealy_id: { type: String, required: false },
+    discord_handle: { type: String, required: false },
+    flexpoints_zealy: { type: Number, required: true, default: 0 },
+    flexpoints_native: { type: Number, required: true, default: 0 },
+    flexpoints_total: { type: Number, required: true, default: 0 },
   },
   { timestamps: true }
 );
 
 // Middleware pour hasher le mot de passe avant l'enregistrement
-UserSchema.pre<IUser>("save", async function (next) {
+UserSchema.pre<UserDocument>("save", async function (next) {
   if (this.isModified("password") && this.password) {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -265,7 +338,7 @@ UserSchema.methods.comparePassword = async function (
 };
 
 // Export du modèle
-const User = mongoose.model<IUser>("User", UserSchema);
+const User = mongoose.model<UserDocument>("User", UserSchema);
 
 // Exports
 export { User, UserSchema };

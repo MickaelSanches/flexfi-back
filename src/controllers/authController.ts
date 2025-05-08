@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IBasicUser, IUser } from "../models/User";
+import { IBasicUser, UserDocument } from "../models/User";
 import authService from "../services/authService";
 import logger from "../utils/logger";
 
@@ -27,6 +27,7 @@ export class AuthController {
         return;
       }
 
+      const isVerified = false;
       const deviceType =
         req.headers["sec-ch-ua-platform"]?.toString() || undefined;
       const browser = req.headers["user-agent"]?.toString() || undefined;
@@ -37,13 +38,14 @@ export class AuthController {
       const deviceLocale =
         req.headers["accept-language"]?.toString() || undefined;
 
-      const { user, token }: { user: IUser; token: string } =
+      const { user, token }: { user: UserDocument; token: string } =
         await authService.registerWithEmail(
           email,
           password,
           firstName,
           lastName,
           referralCodeUsed,
+          isVerified,
           deviceType,
           browser,
           ipCity,
@@ -292,7 +294,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        points: user.points,
+        points: user.flexpoints_total,
         userReferralCode: user.userReferralCode,
       }));
 
@@ -319,7 +321,7 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const userId = (req.user as any)?._id;
+      const userId = (req.user as UserDocument)?._id;
       if (!userId) {
         res.status(401).json({
           status: "error",
@@ -361,6 +363,31 @@ export class AuthController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  async verifyVerificationCode(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { code } = req.body;
+      if (!id || !code) {
+        res.status(400).json({ error: "Missing id or code" });
+        return;
+      }
+      await authService.verifyVerificationCode(id, code);
+      res.status(200).json({ message: "Code verified successfully" });
+    } catch (error) {
+      res.status(400).json({ error: "Invalid verification code" });
+    }
+  }
+
+  async verifyResetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { token, password } = req.body;
+      await authService.verifyResetPasswordAndToken(token, password);
+      res.status(200).json({ message: "Password reset successfully" });
+    } catch (error) {
+      res.status(400).json({ error: "Invalid reset token or password" });
     }
   }
 }

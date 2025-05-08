@@ -1,4 +1,4 @@
-import { IUser, User } from "../models/User";
+import { User, UserDocument } from "../models/User";
 import {
   AppError,
   ConflictError,
@@ -16,11 +16,12 @@ export class AuthService {
     firstName?: string,
     lastName?: string,
     referralCodeUsed?: string,
+    isVerified?: boolean,
     deviceType?: string,
     browser?: string,
     ipCity?: string,
     deviceLocale?: string
-  ): Promise<{ user: IUser; token: string }> {
+  ): Promise<{ user: UserDocument; token: string; verificationCode: string }> {
     try {
       // Vérifier si l'utilisateur existe déjà
       const existingUser = await User.findOne({ email });
@@ -30,15 +31,18 @@ export class AuthService {
 
       // Créer un referral code
       const referralCode = await this.generateUniqueReferralCode();
+      const verificationCode = await this.generateVerificationCode();
       // Créer un nouvel utilisateur
       const user = new User({
         email: email.toLowerCase(),
         password: password,
         firstName: firstName?.toLowerCase(),
         lastName: lastName?.toLowerCase(),
+        isVerified: isVerified,
         authMethod: "email",
         referralCodeUsed: referralCodeUsed?.toUpperCase(),
         userReferralCode: referralCode.toUpperCase(),
+        verificationCode: verificationCode,
         deviceType: deviceType,
         browser: browser,
         ipCity: ipCity,
@@ -50,7 +54,20 @@ export class AuthService {
       // Générer un JWT
       const token = generateToken(user);
 
-      return { user, token };
+      // Vérifier et appliquer les points de parrainage
+      if (referralCodeUsed) {
+        await User.findOneAndUpdate(
+          { userReferralCode: referralCodeUsed.toUpperCase() },
+          {
+            $inc: {
+              flexpoints_native: 5,
+              flexpoints_total: 5,
+            },
+          }
+        );
+      }
+
+      return { user, token, verificationCode };
     } catch (error: any) {
       // Propager l'erreur AppError
       if (error instanceof AppError) throw error;
@@ -63,7 +80,7 @@ export class AuthService {
   async loginWithEmail(
     email: string,
     password: string
-  ): Promise<{ user: IUser; token: string }> {
+  ): Promise<{ user: UserDocument; token: string }> {
     try {
       // Trouver l'utilisateur
       const user = await User.findOne({ email });
@@ -93,9 +110,9 @@ export class AuthService {
   async findOrCreateOAuthUser(
     profile: any,
     authMethod: "google" | "apple" | "twitter"
-  ): Promise<{ user: IUser; token: string }> {
+  ): Promise<{ user: UserDocument; token: string }> {
     try {
-      let user: IUser | null = null;
+      let user: UserDocument | null = null;
 
       // Déterminer l'ID basé sur la méthode d'auth
       let query: any = { email: profile.email };
@@ -104,6 +121,7 @@ export class AuthService {
       user = await User.findOne(query);
 
       if (!user) {
+        const verificationCode = await this.generateVerificationCode();
         // Créer un nouvel utilisateur
         user = new User({
           email: profile.email,
@@ -112,6 +130,7 @@ export class AuthService {
           lastName:
             profile.lastName || profile.family_name || profile.name?.familyName,
           authMethod,
+          verificationCode: verificationCode,
         });
 
         // Ajouter l'ID spécifique au provider
@@ -137,7 +156,7 @@ export class AuthService {
       // Générer un JWT
       const token = generateToken(user);
 
-      return { user, token };
+      return { user: user as UserDocument, token };
     } catch (error: any) {
       // Propager l'erreur AppError
       if (error instanceof AppError) throw error;
@@ -152,7 +171,7 @@ export class AuthService {
       throw NotFoundError("User not found");
     }
     // Add points to the user
-    user.points += 5;
+    user.flexpoints_native += 5;
     await user.save();
   }
 
@@ -175,9 +194,11 @@ export class AuthService {
     return code;
   }
 
-  async getTopReferrals(): Promise<IUser[]> {
+  async getTopReferrals(): Promise<UserDocument[]> {
     try {
-      const topReferrals = await User.find().sort({ points: -1 }).limit(10);
+      const topReferrals = await User.find()
+        .sort({ flexpoints_total: -1 })
+        .limit(10);
 
       if (!topReferrals || topReferrals.length === 0) {
         throw NotFoundError("No referrals found");
@@ -193,7 +214,7 @@ export class AuthService {
   }
 
   // Récupérer un utilisateur par son ID
-  async getUserById(userId: string): Promise<IUser> {
+  async getUserById(userId: string): Promise<UserDocument> {
     try {
       const user = await User.findById(userId);
       if (!user) {
@@ -213,7 +234,7 @@ export class AuthService {
       if (!user) {
         throw NotFoundError("User not found");
       }
-      return user.points || 0;
+      return user.flexpoints_total || 0;
     } catch (error: any) {
       if (error instanceof AppError) throw error;
       throw InternalError(`Failed to get user points: ${error.message}`);
@@ -230,13 +251,46 @@ export class AuthService {
 
       // Compter le nombre d'utilisateurs avec plus de points
       const rank = await User.countDocuments({
-        points: { $gt: user.points || 0 },
+        flexpoints_total: { $gt: user.flexpoints_total || 0 },
       });
       return rank + 1; // +1 car le rang commence à 1
     } catch (error: any) {
       if (error instanceof AppError) throw error;
       throw InternalError(`Failed to get user rank: ${error.message}`);
     }
+  }
+
+  async verifyVerificationCode(id: string, code: string): Promise<void> {
+    const user = await User.findOne({ _id: id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.verificationCode !== code) {
+      throw new Error("Invalid verification code");
+    }
+
+    user.isVerified = true;
+    user.verificationCode = "";
+    await user.save();
+  }
+
+  async verifyResetPasswordAndToken(
+    resetToken: string,
+    password: string
+  ): Promise<void> {
+    const user = await User.findOne({ resetToken: resetToken });
+    if (!user) {
+      throw new Error("Invalid reset token");
+    }
+    user.password = password;
+    user.resetToken = "";
+    await user.save();
+  }
+
+  async generateVerificationCode(): Promise<string> {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    return code;
   }
 }
 

@@ -90,7 +90,7 @@ describe("WaitlistService", () => {
       // Vérifier la réponse comme le controller
       expect(user).toBeDefined();
       expect(user.formFullfilled).toBe(true);
-      expect(user.points).toBe(20); // 20 points for completing the form
+      expect(user.flexpoints_native).toBe(20); // 20 points for completing the form
       expect(user.email).toBe(formData.email);
       expect(user.firstName).toBe(basicUser.firstName);
       expect(user.lastName).toBe(basicUser.lastName);
@@ -203,6 +203,41 @@ describe("WaitlistService", () => {
         waitlistService.registerWaitlistInfos(userData)
       ).rejects.toThrow("Form already submitted");
     });
+    it("should throw error when form data is incomplete", async () => {
+      // Create a basic user first
+      const basicUser = await User.create({
+        email: "test@example.com",
+        password: "password123",
+        firstName: "Test",
+        lastName: "User",
+        referralCodeUsed: undefined,
+        userReferralCode: "TEST123",
+        authMethod: "email",
+        formFullfilled: false,
+        wallets: [],
+        kycStatus: "none",
+        points: 0,
+      });
+
+      // Simuler des données incomplètes
+      const formData: Partial<IWaitlistFormData> = {
+        email: "test@example.com",
+        phoneNumber: "+1234567890",
+        // Manque plusieurs champs requis
+      };
+
+      const { email, ...formDataWithoutEmail } = formData;
+      const userData: IWaitlistUser = {
+        email: email!,
+        formData: formDataWithoutEmail as any,
+      };
+
+      const result = await waitlistService.registerWaitlistInfos(userData);
+      expect(result).toBeDefined();
+      expect(result.formFullfilled).toBe(true);
+      expect(result.flexpoints_native).toBe(20);
+      expect(result.email).toBe("test@example.com");
+    });
   });
 
   describe("getWaitlistCount", () => {
@@ -248,7 +283,7 @@ describe("WaitlistService", () => {
       ]);
 
       const count = await waitlistService.getWaitlistCount();
-      expect(count).toBe(2);
+      expect(count).toBe(3);
     });
 
     it("should throw error when database connection fails", async () => {

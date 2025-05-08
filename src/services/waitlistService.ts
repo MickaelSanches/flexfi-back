@@ -1,7 +1,12 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import { IUser, IUserDataToExport, IWaitlistUser, User } from "../models/User";
+import {
+  IUserDataToExport,
+  IWaitlistUser,
+  User,
+  UserDocument,
+} from "../models/User";
 import { ConflictError, InternalError, NotFoundError } from "../utils/AppError";
 
 dotenv.config();
@@ -29,7 +34,7 @@ function createCsv(headers: string[], data: any[]): string {
 
 export class WaitlistService {
   // Register a new user in the waitlist
-  async registerWaitlistInfos(userData: IWaitlistUser): Promise<IUser> {
+  async registerWaitlistInfos(userData: IWaitlistUser): Promise<UserDocument> {
     try {
       const user = await User.findOne({ email: userData.email });
 
@@ -47,7 +52,10 @@ export class WaitlistService {
           $set: {
             ...userData.formData,
             formFullfilled: true,
-            points: user.points + 20,
+          },
+          $inc: {
+            flexpoints_native: 20,
+            flexpoints_total: 20,
           },
         },
         { new: true }
