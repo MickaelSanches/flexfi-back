@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body } from "express-validator/lib/middlewares/validation-chain-builders";
 
 export const registerUserValidation = [
   // Basic information

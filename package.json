@@ -24,6 +24,7 @@
     "@sendinblue/client": "^3.3.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
+    "axios": "^1.9.0",
     "bcrypt": "^5.1.0",
     "bs58": "^6.0.0",
     "colors": "^1.4.0",

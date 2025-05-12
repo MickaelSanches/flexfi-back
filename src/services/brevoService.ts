@@ -1,4 +1,4 @@
-import SibApiV3Sdk from "@sendinblue/client";
+import * as SibApiV3Sdk from "@sendinblue/client";
 import env from "../config/env";
 import { User, UserDocument } from "../models/User";
 
