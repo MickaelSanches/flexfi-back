@@ -1,4 +1,5 @@
 import * as SibApiV3Sdk from "@sendinblue/client";
+
 import env from "../config/env";
 import { User, UserDocument } from "../models/User";
 
@@ -28,7 +29,7 @@ export class BrevoService {
       sendSmtpEmail.templateId = parseInt(env.BREVO_TEMPLATE_SIGNUP_ID);
       sendSmtpEmail.params = {
         username: userToVerify.firstName,
-        activation_link: `https://www.flex-fi.io/activate?token=${userToVerify.verificationCode}&id=${userToVerify._id}`,
+        activation_link: `http://localhost:5173/activate?token=${userToVerify.verificationCode}&id=${userToVerify._id}`,
       };
 
       await apiInstance.sendTransacEmail(sendSmtpEmail);

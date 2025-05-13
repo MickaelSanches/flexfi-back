@@ -1,61 +1,36 @@
-// import mongoose from 'mongoose';
-// import dotenv from 'dotenv';
-
-// // Charger les variables d'environnement
-// dotenv.config();
-
-// // Récupérer l'URI de MongoDB
-// const MONGODB_URI = process.env.MONGODB_URI;
-
-// // Vérifier si l'URI est défini
-// if (!MONGODB_URI) {
-//   console.error('MONGODB_URI is not defined in environment variables');
-//   process.exit(1);
-// }
-
-// export const connectDatabase = async (): Promise<void> => {
-//   try {
-//     console.log('Connecting to MongoDB Atlas...');
-//     await mongoose.connect(MONGODB_URI);
-//     console.log('Connected to MongoDB Atlas');
-//   } catch (error) {
-//     console.error('MongoDB connection error:', error);
-//     process.exit(1);
-//   }
-// };
-
 import mongoose from 'mongoose';
-
-// Get MongoDB URI from environment variables
-const MONGODB_URI = process.env.MONGODB_URI;
+import logger from '../utils/logger';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    // In test environment, connect to the test database
+    const MONGODB_URI = process.env.MONGODB_URI;
+
+    // En environnement de test, se connecter à la base de test
     if (process.env.NODE_ENV === 'test') {
-      console.log('Connecting to test database...');
-      // If the URI is 'memory', we're using MongoMemoryServer which is initialized in the test
+      logger.info('Connecting to test database...');
       if (MONGODB_URI !== 'memory') {
         await mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/flexfi_test');
-        console.log('Connected to test database');
+        logger.info('Connected to test database');
       } else {
-        console.log('Using in-memory database from MongoMemoryServer');
-        // Connection is managed by the test itself
+        logger.info('Using in-memory database from MongoMemoryServer');
+  
       }
     } else {
-      // In production/development, connect to Atlas
-      console.log('Connecting to MongoDB Atlas...');
+      // En production/développement, se connecter à la base principale
+      logger.info('Connecting to MongoDB...');
       
-      // Default to Atlas URI if MONGODB_URI is not set
-      const uri = MONGODB_URI || 'mongodb+srv://henrilbhlb:BabyFace33@flexfidev.m4hdwkn.mongodb.net/flexfi?retryWrites=true&w=majority';
+      if (!MONGODB_URI) {
+        logger.error('MONGODB_URI is not defined in environment variables');
+        throw new Error('MONGODB_URI environment variable is not set');
+      }
       
-      await mongoose.connect(uri);
-      console.log('Connected to MongoDB Atlas successfully!');
+      await mongoose.connect(MONGODB_URI);
+      logger.info('Connected to MongoDB successfully!');
     }
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     
-    // Don't exit in test environment, let the test handle it
+    // Ne pas quitter en environnement de test, laisser le test gérer l'erreur
     if (process.env.NODE_ENV !== 'test') {
       process.exit(1);
     } else {

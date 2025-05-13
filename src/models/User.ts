@@ -244,7 +244,7 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true },
     referralCodeUsed: { type: String, required: false },
     userReferralCode: { type: String, required: true },
-    verificationCode: { type: String, required: true },
+    verificationCode: { type: String, required: false },
     isVerified: { type: Boolean, required: true, default: false },
     resetToken: { type: String, required: false },
     authMethod: {

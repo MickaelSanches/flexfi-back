@@ -63,6 +63,7 @@ export class AuthController {
         kycStatus: user.kycStatus,
         formFullfilled: user.formFullfilled,
         userReferralCode: user.userReferralCode,
+        isVerified: user.isVerified,
       };
 
       // Handle referral points
@@ -77,6 +78,49 @@ export class AuthController {
     } catch (error) {
       // Passer l'erreur au middleware de gestion d'erreurs global
       next(error);
+    }
+  }
+
+  async activateAccountViaLink(req: Request, res: Response): Promise<void> {
+    try {
+      // Récupération sécurisée des paramètres de query
+      const id = req.query.id?.toString();
+      const token = req.query.token?.toString();
+
+      // Vérification des paramètres
+      if (!id || !token) {
+        res.status(400).json({ error: "Missing id or token" });
+        return;
+      }
+
+      // Appel du service pour vérification
+      await authService.verifyVerificationCode(id, token);
+
+      // Succès
+      res.status(200).json({ message: "Account activated successfully" });
+    } catch (error) {
+      console.error("Activation error:", error);
+      res.status(400).json({ error: "Invalid or expired activation link" });
+    }
+  }
+
+  async resendVerificationEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ error: "Email is required" });
+        return;
+      }
+
+      await authService.resendVerificationEmail(email);
+      res
+        .status(200)
+        .json({ message: "Verification email resent successfully" });
+    } catch (error) {
+      res.status(400).json({
+        error:
+          (error as Error).message || "Failed to resend verification email",
+      });
     }
   }
 
@@ -107,6 +151,7 @@ export class AuthController {
         selectedCard: user.selectedCard,
         formFullfilled: user.formFullfilled,
         userReferralCode: user.userReferralCode,
+        isVerified: user.isVerified,
       };
 
       // Logger la connexion réussie

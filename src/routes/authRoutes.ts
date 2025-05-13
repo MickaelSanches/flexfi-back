@@ -53,6 +53,10 @@ router.post("/send-code", brevoController.sendVerificationCode);
 // Route pour vérifier le code de vérification
 router.post("/verify-code/:id", authController.verifyVerificationCode);
 
+router.post("/resend-verification", authController.resendVerificationEmail);
+
+router.get("/activate", authController.activateAccountViaLink);
+
 // Route pour réinitialiser le mot de passe
 router.post("/reset-password", brevoController.sendPasswordReset);
 // Route pour vérifier le token et le mot de passe lors de la réini
