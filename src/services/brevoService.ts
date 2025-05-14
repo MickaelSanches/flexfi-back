@@ -35,13 +35,6 @@ export class BrevoService {
       };
 
       await apiInstance.sendTransacEmail(sendSmtpEmail);
-      await authService.registerWithEmail(
-        userToVerify.email,
-        userToVerify.password,
-        userToVerify.firstName,
-        userToVerify.lastName,
-        userToVerify.referralCodeUsed
-      );
     } catch (error) {
       throw new Error(`Failed to send verification email: ${error}`);
     }
@@ -91,9 +84,9 @@ export class BrevoService {
     try {
       // Map template name to template ID
       const templateIdMap: Record<string, number> = {
-        "signup": parseInt(env.BREVO_TEMPLATE_SIGNUP_ID),
+        signup: parseInt(env.BREVO_TEMPLATE_SIGNUP_ID),
         "reset-password": parseInt(env.BREVO_TEMPLATE_RESET_PASSWORD_ID),
-        "zealy-connection": parseInt(env.BREVO_TEMPLATE_ZEALY_ID || "0")
+        "zealy-connection": parseInt(env.BREVO_TEMPLATE_ZEALY_ID || "0"),
       };
 
       const templateId = templateIdMap[templateName];
