@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IBasicUser, UserDocument } from "../models/User";
+import { IBasicUser, User, UserDocument } from "../models/User";
 import authService from "../services/authService";
 import logger from "../utils/logger";
 
@@ -65,11 +65,6 @@ export class AuthController {
         userReferralCode: user.userReferralCode,
         isVerified: user.isVerified,
       };
-
-      // Handle referral points
-      if (referralCodeUsed) {
-        await authService.handleReferralPoints(referralCodeUsed);
-      }
 
       res.status(201).json({
         status: "success",
@@ -339,7 +334,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        points: user.flexpoints_total,
+        flexpoints_total: user.flexpoints_total,
         userReferralCode: user.userReferralCode,
       }));
 

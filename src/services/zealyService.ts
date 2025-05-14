@@ -30,10 +30,10 @@ export class ZealyService {
       const user = await User.findByIdAndUpdate(
         userId,
         {
-          zealy_id: id,
-          discord_handle: discordHandle,
-          flexpoints_zealy: points,
-          flexpoints_total: { $add: ["$flexpoints_native", points] },
+          $set: {
+            zealy_id: id,
+            discord_handle: discordHandle,
+          },
         },
         { new: true }
       );
@@ -42,7 +42,8 @@ export class ZealyService {
         throw NotFoundError("User not found");
       }
 
-      return user;
+      // Ajouter les points Zealy en utilisant la méthode du modèle
+      return await user.addZealyPoints(points);
     } catch (error: any) {
       logger.error("Zealy verification error:", error);
       if (error instanceof Error) throw error;
@@ -75,21 +76,8 @@ export class ZealyService {
 
       const { points } = response.data;
 
-      // Update points
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        {
-          flexpoints_zealy: points,
-          flexpoints_total: { $add: ["$flexpoints_native", points] },
-        },
-        { new: true }
-      );
-
-      if (!updatedUser) {
-        throw NotFoundError("Failed to update user points");
-      }
-
-      return updatedUser;
+      // Ajouter les points Zealy en utilisant la méthode du modèle
+      return await user.addZealyPoints(points);
     } catch (error: any) {
       logger.error("Zealy sync points error:", error);
       if (error instanceof Error) throw error;

@@ -145,10 +145,10 @@ describe("Auth API", () => {
           lastName: "One",
           userReferralCode: "FLEX-ABC123",
           authMethod: "email",
-          points: 50,
           formFullfilled: true,
           wallets: [],
           kycStatus: "none",
+          verificationCode: "FLEX-USER01",
         },
         {
           email: "user2@example.com",
@@ -157,10 +157,10 @@ describe("Auth API", () => {
           lastName: "Two",
           userReferralCode: "FLEX-DEF456",
           authMethod: "email",
-          points: 30,
           formFullfilled: true,
           wallets: [],
           kycStatus: "none",
+          verificationCode: "FLEX-USER02",
         },
         {
           email: "user3@example.com",
@@ -169,12 +169,20 @@ describe("Auth API", () => {
           lastName: "Three",
           userReferralCode: "FLEX-GHI789",
           authMethod: "email",
-          points: 100,
           formFullfilled: true,
           wallets: [],
           kycStatus: "none",
+          verificationCode: "FLEX-USER03",
         },
       ]);
+
+      // Attribution des points via la méthode métier
+      const user1 = await User.findOne({ email: "user1@example.com" });
+      const user2 = await User.findOne({ email: "user2@example.com" });
+      const user3 = await User.findOne({ email: "user3@example.com" });
+      if (user1) await user1.addNativePoints(50);
+      if (user2) await user2.addNativePoints(30);
+      if (user3) await user3.addNativePoints(100);
 
       const response = await request(app).get("/api/auth/top-referrals");
 
@@ -187,9 +195,9 @@ describe("Auth API", () => {
       expect(topReferrals).toHaveLength(3);
 
       // Verify users are sorted by points in descending order
-      expect(topReferrals[0].points).toBe(100);
-      expect(topReferrals[1].points).toBe(50);
-      expect(topReferrals[2].points).toBe(30);
+      expect(topReferrals[0].flexpoints_total).toBe(100);
+      expect(topReferrals[1].flexpoints_total).toBe(50);
+      expect(topReferrals[2].flexpoints_total).toBe(30);
     });
 
     it("should return 404 when no users found", async () => {

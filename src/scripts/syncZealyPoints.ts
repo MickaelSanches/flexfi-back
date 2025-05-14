@@ -23,20 +23,16 @@ async function syncZealyPoints() {
         const { points } = response.data;
 
         // Mettre à jour les points Zealy et totaux
-        await User.findByIdAndUpdate(
-          user._id,
-          {
-            $set: { flexpoints_zealy: points },
-            $expr: {
-              $set: {
-                flexpoints_total: {
-                  $add: ["$flexpoints_native", points],
-                },
-              },
-            },
+        await User.findByIdAndUpdate(user._id, {
+          $set: {
+            zealy_id: user.zealy_id,
+            discord_handle: user.discord_handle,
+            flexpoints_zealy: points,
           },
-          { new: true }
-        );
+        });
+
+        // Ajouter les points Zealy
+        await user.addZealyPoints(points);
 
         logger.info(`Points synchronisés pour l'utilisateur ${user._id}`);
       } catch (error) {

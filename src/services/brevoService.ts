@@ -2,6 +2,7 @@ import * as SibApiV3Sdk from "@sendinblue/client";
 
 import env from "../config/env";
 import { User, UserDocument } from "../models/User";
+import authService from "./authService";
 
 const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 apiInstance.setApiKey(
@@ -33,6 +34,13 @@ export class BrevoService {
       };
 
       await apiInstance.sendTransacEmail(sendSmtpEmail);
+      await authService.registerWithEmail(
+        userToVerify.email,
+        userToVerify.password,
+        userToVerify.firstName,
+        userToVerify.lastName,
+        userToVerify.referralCodeUsed
+      );
     } catch (error) {
       throw new Error(`Failed to send verification email: ${error}`);
     }
