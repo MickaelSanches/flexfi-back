@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { IBasicUser, User, UserDocument } from "../models/User";
+import { UserDocument } from "../models/User";
 import authService from "../services/authService";
-import logger from "../utils/logger";
 import notificationService from "../services/notificationService";
 import { AppError } from "../utils/AppError";
+import logger from "../utils/logger";
 import { validateEmail, validatePassword } from "../utils/validators";
 
 // Helper function to send Zealy connection email after successful registration
@@ -14,12 +14,18 @@ const sendZealyConnectionEmail = async (userId: string): Promise<void> => {
       try {
         await notificationService.sendZealyConnectionEmail(userId);
       } catch (error) {
-        logger.error(`Failed to send Zealy connection email to user ${userId}:`, error);
+        logger.error(
+          `Failed to send Zealy connection email to user ${userId}:`,
+          error
+        );
         // Don't throw error here, as this is a background task
       }
     }, 5000);
   } catch (error) {
-    logger.error(`Error scheduling Zealy connection email for user ${userId}:`, error);
+    logger.error(
+      `Error scheduling Zealy connection email for user ${userId}:`,
+      error
+    );
   }
 };
 
@@ -31,13 +37,8 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const {
-        email,
-        firstName,
-        lastName,
-        password,
-        referralCodeUsed,
-      } = req.body;
+      const { email, firstName, lastName, password, referralCodeUsed } =
+        req.body;
 
       // Validate email and password
       if (!validateEmail(email)) {
@@ -86,19 +87,31 @@ export class AuthController {
       // Return success response
       res.status(201).json({
         success: true,
-        data: { 
+        data: {
           user: {
             _id: user._id,
             email: user.email,
             firstName: user.firstName,
-            lastName: user.lastName
-          }, 
-          token 
+            lastName: user.lastName,
+            isVerified: user.isVerified,
+            userReferralCode: user.userReferralCode,
+            formFullfilled: user.formFullfilled,
+          },
+          token: token,
         },
-        message: "Registration successful. Please check your email for verification."
+        message:
+          "Registration successful. Please check your email for verification.",
       });
     } catch (error: any) {
       logger.error("Registration error:", error);
+      if (
+        error &&
+        error.message &&
+        error.message.includes("User already exists")
+      ) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
       next(new AppError(error.message, 400));
     }
   }

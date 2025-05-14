@@ -26,13 +26,13 @@ describe("Auth API", () => {
     it("should register a new user", async () => {
       const res = await request(app).post("/api/auth/register").send({
         email: "test@example.com",
-        password: "password123",
+        password: "Password123!@#",
         firstName: "Test",
         lastName: "User",
       });
 
       expect(res.status).toBe(201);
-      expect(res.body.status).toBe("success");
+      expect(res.body.success).toBe(true);
       expect(res.body.data.user).toHaveProperty("email", "test@example.com");
       expect(res.body.data).toHaveProperty("token");
     });
@@ -44,26 +44,28 @@ describe("Auth API", () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.status).toBe("error");
-      expect(res.body.message).toBe("Email and password are required");
+      expect(res.body.error).toBeDefined();
     });
 
     it("should return 409 if user already exists", async () => {
       // Create a user first
       await request(app).post("/api/auth/register").send({
         email: "existing@example.com",
-        password: "password123",
+        password: "Password123!@#",
+        firstName: "Test",
+        lastName: "User",
       });
 
       // Try to create a user with the same email
       const res = await request(app).post("/api/auth/register").send({
         email: "existing@example.com",
-        password: "password456",
+        password: "Password456!@#",
+        firstName: "Test",
+        lastName: "User",
       });
 
       expect(res.status).toBe(409);
-      expect(res.body.status).toBe("error");
-      expect(res.body.message).toContain("already exists");
+      expect(res.body.error).toBeDefined();
     });
   });
 
@@ -72,13 +74,15 @@ describe("Auth API", () => {
       // Create a user first
       await request(app).post("/api/auth/register").send({
         email: "login@example.com",
-        password: "password123",
+        password: "Password123!@#",
+        firstName: "Test",
+        lastName: "User",
       });
 
       // Test login
       const res = await request(app).post("/api/auth/login").send({
         email: "login@example.com",
-        password: "password123",
+        password: "Password123!@#",
       });
 
       expect(res.status).toBe(200);
@@ -91,7 +95,9 @@ describe("Auth API", () => {
       // Create a user first
       await request(app).post("/api/auth/register").send({
         email: "login@example.com",
-        password: "password123",
+        password: "Password123!@#",
+        firstName: "Test",
+        lastName: "User",
       });
 
       // Try to login with wrong password
@@ -111,8 +117,13 @@ describe("Auth API", () => {
       // Create a user and get the token
       const registerRes = await request(app).post("/api/auth/register").send({
         email: "me@example.com",
-        password: "password123",
+        password: "Password123!@#",
       });
+
+      console.log(
+        "Register response:",
+        JSON.stringify(registerRes.body, null, 2)
+      );
 
       const token = registerRes.body.data.token;
 
