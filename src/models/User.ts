@@ -231,6 +231,7 @@ export type UserSchemaType = {
   comparePassword(candidatePassword: string): Promise<boolean>;
   addNativePoints(points: number): Promise<UserDocument>;
   addZealyPoints(points: number): Promise<UserDocument>;
+  setZealyPoints(points: number): Promise<UserDocument>;
 };
 
 // Type pour le document Mongoose
