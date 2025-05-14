@@ -96,6 +96,7 @@ const env = cleanEnv(process.env, {
   BREVO_API_KEY: str({ default: "" }),
   BREVO_TEMPLATE_SIGNUP_ID: str({ default: "" }),
   BREVO_TEMPLATE_RESET_PASSWORD_ID: str({ default: "" }),
+  BREVO_TEMPLATE_ZEALY_ID: str({ default: "" }),
 });
 
 export default env;
