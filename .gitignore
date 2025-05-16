@@ -79,3 +79,14 @@ temp/
 .nuxt/
 .vercel
 .directory 
+
+# some testing files 
+generate-admin-key.ts
+bs58Tobs64.ts
+drop-bad-index.ts
+initialize-whitelist.ts
+fix-missing-wallets.js 
+inspect-users.js
+whitelist-authority.json
+analyze-wallet-problem.js
+uploads/
