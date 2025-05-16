@@ -31,6 +31,7 @@ async function syncZealyPoints() {
 
     let updatedCount = 0;
     let errorCount = 0;
+    let notFoundCount = 0;
 
     // Process each user in the leaderboard
     for (const zealyUser of leaderboard) {
@@ -44,6 +45,7 @@ async function syncZealyPoints() {
         const user = await User.findOne({ zealy_id: zealyUser.userId });
         
         if (!user) {
+          notFoundCount++;
           logger.debug(`No user found with Zealy ID: ${zealyUser.userId}`);
           continue;
         }
@@ -65,7 +67,7 @@ async function syncZealyPoints() {
       }
     }
 
-    logger.info(`Zealy points synchronization completed. Updated: ${updatedCount}, Errors: ${errorCount}`);
+    logger.info(`Zealy points synchronization completed. Updated: ${updatedCount}, Not found: ${notFoundCount}, Errors: ${errorCount}`);
   } catch (error) {
     logger.error("Error during Zealy points synchronization:", error);
   }
