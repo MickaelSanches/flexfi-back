@@ -1,6 +1,6 @@
 import axios from "axios";
-import { zealyConfig } from "../config/zealy";
-import logger from "../utils/logger";
+import { zealyConfig } from "../../config/zealy";
+import logger from "../../utils/logger";
 
 async function testZealyConnection() {
   logger.info("Starting Zealy API connection test");

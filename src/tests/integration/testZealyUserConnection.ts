@@ -1,9 +1,9 @@
 import axios from "axios";
-import { zealyConfig } from "../config/zealy";
-import { User } from "../models/User";
-import logger from "../utils/logger";
+import { zealyConfig } from "../../config/zealy";
+import { User } from "../../models/User";
+import logger from "../../utils/logger";
 import mongoose from "mongoose";
-import env from "../config/env";
+import env from "../../config/env";
 
 // This script tests the entire user connection flow without requiring HTTP requests
 // It uses direct API calls to simulate what would happen in the controller
