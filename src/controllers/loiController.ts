@@ -85,12 +85,23 @@ export const getLOIById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const loi = await loiService.getLOIById(id);
+    let loi;
+    try {
+      loi = await loiService.getLOIById(id);
+    } catch (error: any) {
+      if (error.name === 'CastError') {
+        return res.status(404).json({
+          success: false,
+          message: 'LOI not found',
+        });
+      }
+      throw error;
+    }
 
     if (!loi) {
       return res.status(404).json({
         success: false,
-        message: "LOI not found",
+        message: 'LOI not found',
       });
     }
 
@@ -109,10 +120,10 @@ export const getLOIById = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error getting LOI:", error);
+    console.error('Error getting LOI:', error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while retrieving the LOI",
+      message: 'An error occurred while retrieving the LOI',
     });
   }
 };
@@ -124,12 +135,23 @@ export const downloadLOI = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const loi = await loiService.getLOIById(id);
+    let loi;
+    try {
+      loi = await loiService.getLOIById(id);
+    } catch (error: any) {
+      if (error.name === 'CastError') {
+        return res.status(404).json({
+          success: false,
+          message: 'LOI not found',
+        });
+      }
+      throw error;
+    }
 
     if (!loi) {
       return res.status(404).json({
         success: false,
-        message: "LOI not found",
+        message: 'LOI not found',
       });
     }
 
@@ -155,10 +177,10 @@ export const downloadLOI = async (req: Request, res: Response) => {
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
-    console.error("Error downloading LOI:", error);
+    console.error('Error downloading LOI:', error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while downloading the LOI",
+      message: 'An error occurred while downloading the LOI',
     });
   }
 };

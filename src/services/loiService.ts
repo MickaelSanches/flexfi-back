@@ -381,7 +381,14 @@ class LOIService {
    * Get an LOI by ID
    */
   async getLOIById(loiId: string): Promise<ILOI | null> {
-    return await LOI.findById(loiId);
+    try {
+      return await LOI.findById(loiId);
+    } catch (error: any) {
+      if (error.name === 'CastError') {
+        return null;
+      }
+      throw error;
+    }
   }
 }
 

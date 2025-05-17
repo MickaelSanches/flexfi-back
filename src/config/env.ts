@@ -22,18 +22,18 @@ const env = cleanEnv(process.env, {
   // ==========================================
   // Configuration Base de données
   // ==========================================
-  MONGODB_URI: url(),
+  MONGODB_URI: process.env.NODE_ENV === 'test' ? str({ default: 'memory' }) : url(),
 
   // ==========================================
   // Configuration Authentification
   // ==========================================
-  JWT_SECRET: str(),
+  JWT_SECRET: str({ default: process.env.NODE_ENV === 'test' ? 'test-jwt-secret' : undefined }),
   JWT_EXPIRES_IN: str({ default: "7d" }),
 
   // ==========================================
   // Configuration Chiffrement
   // ==========================================
-  ENCRYPTION_KEY: str(),
+  ENCRYPTION_KEY: str({ default: process.env.NODE_ENV === 'test' ? 'test-encryption-key-32-chars-long' : undefined }),
 
   // ==========================================
   // Configuration Solana

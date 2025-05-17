@@ -4,27 +4,6 @@ import request from "supertest";
 import app from "../../app";
 import { LOI } from "../../models/LOI";
 
-// Mock services that generate PDFs and send emails
-jest.mock("../../services/loiService", () => {
-  const original = jest.requireActual("../../services/loiService").default;
-
-  return {
-    __esModule: true,
-    default: {
-      ...original,
-      generatePDF: jest.fn().mockImplementation((loiData) => {
-        return Promise.resolve(
-          `/uploads/loi/LOI_FlexFi_${loiData.company.replace(
-            /\s+/g,
-            "_"
-          )}_2023-01-01T00-00-00.pdf`
-        );
-      }),
-      sendEmail: jest.fn().mockResolvedValue(undefined),
-    },
-  };
-});
-
 describe("LOI API Routes", () => {
   let mongoServer: MongoMemoryServer;
 
@@ -44,6 +23,11 @@ describe("LOI API Routes", () => {
   beforeEach(async () => {
     // Clear LOI collection before each test
     await LOI.deleteMany({});
+    const loiService = require('../../services/loiService').default;
+    jest.spyOn(loiService, 'generatePDF').mockImplementation((loiData: any) => {
+      return Promise.resolve(`/uploads/loi/LOI_FlexFi_${loiData.company.replace(/\s+/g, '_')}_2023-01-01T00-00-00.pdf`);
+    });
+    jest.spyOn(loiService, 'sendEmail').mockResolvedValue(undefined);
   });
 
   describe("POST /api/loi", () => {
