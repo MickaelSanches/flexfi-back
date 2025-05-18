@@ -35,7 +35,6 @@ app.use(
 );
 // Middlewares de base
 app.use(helmet()); // Sécurité
-app.use(cors()); // CORS
 app.use(morgan("dev")); // Logging
 app.use(express.json({ limit: "10mb" })); // Parsing JSON with increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
