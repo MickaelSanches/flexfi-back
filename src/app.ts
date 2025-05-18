@@ -14,16 +14,27 @@ import path from "path";
 // Initialiser l'application Express
 const app: Express = express();
 
-const corsOptions = {
-  origin: ["https://www.flex-fi.io", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // autorise les cookies/tokens
-};
+const allowedOrigins = [
+  "https://www.flex-fi.io", // ton domaine prod sans slash final
+  "http://localhost:5173", // dev local (si nécessaire)
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Autorise les requêtes sans origin (comme Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // pour permettre l'envoi de cookies / headers d'auth
+  })
+);
 // Middlewares de base
 app.use(helmet()); // Sécurité
-
-app.use(cors(corsOptions));
 app.use(cors()); // CORS
 app.use(morgan("dev")); // Logging
 app.use(express.json({ limit: "10mb" })); // Parsing JSON with increased limit for base64 images
