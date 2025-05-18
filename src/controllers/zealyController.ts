@@ -17,16 +17,18 @@ export class ZealyController {
 
       // Check rate limit
       if (!checkRateLimit(userId.toString())) {
-        res.status(429).json({ error: "Too many requests, please try again later" });
+        res
+          .status(429)
+          .json({ error: "Too many requests, please try again later" });
         return;
       }
 
       const user = req.user as UserDocument;
-      
+
       // Check identifiers to look up in Zealy
       const identifiers = {
         email: user.email,
-        discordHandle: user.discord_handle
+        discordHandle: user.discord_handle,
       };
 
       // Try to find user in Zealy
@@ -36,21 +38,36 @@ export class ZealyController {
       );
 
       // Redirect to frontend with success message
-      const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
-      redirectUrl.searchParams.append("status", "success");
-      redirectUrl.searchParams.append("zealy_points", updatedUser.flexpoints_zealy.toString());
-      redirectUrl.searchParams.append("total_points", updatedUser.flexpoints_total.toString());
-      
-      res.redirect(redirectUrl.toString());
+      // const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
+      // redirectUrl.searchParams.append("status", "success");
+      // redirectUrl.searchParams.append("zealy_points", updatedUser.flexpoints_zealy.toString());
+      // redirectUrl.searchParams.append("total_points", updatedUser.flexpoints_total.toString());
+
+      // res.redirect(redirectUrl.toString());
+
+      res.status(200).json({
+        status: "success",
+        zealy_points: updatedUser.flexpoints_zealy,
+        total_points: updatedUser.flexpoints_total,
+        zealy_id: updatedUser.zealy_id,
+      });
     } catch (error: any) {
       logger.error("Zealy connect error:", error);
-      
+
       // Determine the appropriate redirect URL with error message
-      const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
-      redirectUrl.searchParams.append("status", "error");
-      redirectUrl.searchParams.append("message", error.message || "Failed to connect Zealy account");
-      
-      res.redirect(redirectUrl.toString());
+      // const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
+      // redirectUrl.searchParams.append("status", "error");
+      // redirectUrl.searchParams.append(
+      //   "message",
+      //   error.message || "Failed to connect Zealy account"
+      // );
+
+      // res.redirect(redirectUrl.toString());
+
+      res.status(500).json({
+        status: "error",
+        message: error.message || "Failed to connect Zealy account",
+      });
     }
   }
 
@@ -69,47 +86,62 @@ export class ZealyController {
 
       // Check rate limit
       if (!checkRateLimit(userId.toString())) {
-        res.status(429).json({ error: "Too many requests, please try again later" });
+        res
+          .status(429)
+          .json({ error: "Too many requests, please try again later" });
         return;
       }
 
       // Get the account identifiers from the request
       // This could be provided by a form the user filled out
-      const { email, discordHandle, discordId, twitterUsername, ethAddress } = req.query;
-      
+      const { email, discordHandle, discordId, twitterUsername, ethAddress } =
+        req.query;
+
       // Validate at least one identifier is provided
-      if (!email && !discordHandle && !discordId && !twitterUsername && !ethAddress) {
+      if (
+        !email &&
+        !discordHandle &&
+        !discordId &&
+        !twitterUsername &&
+        !ethAddress
+      ) {
         res.status(400).json({ error: "At least one identifier is required" });
         return;
       }
 
       // Find the user in Zealy
-      const updatedUser = await zealyService.findZealyUser(
-        userId.toString(),
-        {
-          email: email as string,
-          discordHandle: discordHandle as string,
-          discordId: discordId as string,
-          twitterUsername: twitterUsername as string,
-          ethAddress: ethAddress as string
-        }
-      );
+      const updatedUser = await zealyService.findZealyUser(userId.toString(), {
+        email: email as string,
+        discordHandle: discordHandle as string,
+        discordId: discordId as string,
+        twitterUsername: twitterUsername as string,
+        ethAddress: ethAddress as string,
+      });
 
       // Redirect to frontend with success message
       const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
       redirectUrl.searchParams.append("status", "success");
-      redirectUrl.searchParams.append("zealy_points", updatedUser.flexpoints_zealy.toString());
-      redirectUrl.searchParams.append("total_points", updatedUser.flexpoints_total.toString());
-      
+      redirectUrl.searchParams.append(
+        "zealy_points",
+        updatedUser.flexpoints_zealy.toString()
+      );
+      redirectUrl.searchParams.append(
+        "total_points",
+        updatedUser.flexpoints_total.toString()
+      );
+
       res.redirect(redirectUrl.toString());
     } catch (error: any) {
       logger.error("Zealy callback error:", error);
-      
+
       // Redirect to frontend with error message
       const redirectUrl = new URL(zealyConfig.frontendRedirectUrl);
       redirectUrl.searchParams.append("status", "error");
-      redirectUrl.searchParams.append("message", error.message || "Failed to connect Zealy account");
-      
+      redirectUrl.searchParams.append(
+        "message",
+        error.message || "Failed to connect Zealy account"
+      );
+
       res.redirect(redirectUrl.toString());
     }
   }
@@ -129,7 +161,9 @@ export class ZealyController {
 
       // Check rate limit
       if (!checkRateLimit(userId.toString())) {
-        res.status(429).json({ error: "Too many requests, please try again later" });
+        res
+          .status(429)
+          .json({ error: "Too many requests, please try again later" });
         return;
       }
 
@@ -150,25 +184,21 @@ export class ZealyController {
   }
 
   // Add XP to user's Zealy account
-  async addXP(
-    req: Request, 
-    res: Response, 
-    next: NextFunction
-  ): Promise<void> {
+  async addXP(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = (req.user as UserDocument)?._id;
       if (!userId) {
         res.status(401).json({ error: "User not authenticated" });
         return;
       }
-      
+
       const { xp, label, description } = req.body;
-      
+
       if (!xp || !label) {
         res.status(400).json({ error: "XP amount and label are required" });
         return;
       }
-      
+
       const updatedUser = await zealyService.updateUserXP(
         userId.toString(),
         xp,
@@ -176,7 +206,7 @@ export class ZealyController {
         description || "XP added via FlexFi",
         true
       );
-      
+
       res.json({
         success: true,
         points: {
@@ -194,8 +224,8 @@ export class ZealyController {
 
   // Remove XP from user's Zealy account
   async removeXP(
-    req: Request, 
-    res: Response, 
+    req: Request,
+    res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
@@ -204,14 +234,14 @@ export class ZealyController {
         res.status(401).json({ error: "User not authenticated" });
         return;
       }
-      
+
       const { xp, label, description } = req.body;
-      
+
       if (!xp || !label) {
         res.status(400).json({ error: "XP amount and label are required" });
         return;
       }
-      
+
       const updatedUser = await zealyService.updateUserXP(
         userId.toString(),
         xp,
@@ -219,7 +249,7 @@ export class ZealyController {
         description || "XP removed via FlexFi",
         false
       );
-      
+
       res.json({
         success: true,
         points: {
@@ -247,7 +277,7 @@ export class ZealyController {
       const quests = await zealyService.listQuests();
       res.json({
         success: true,
-        data: quests
+        data: quests,
       });
     } catch (error: any) {
       logger.error("Zealy list quests error:", error);
@@ -265,16 +295,16 @@ export class ZealyController {
   ): Promise<void> {
     try {
       const { questId } = req.params;
-      
+
       if (!questId) {
         res.status(400).json({ error: "Quest ID is required" });
         return;
       }
-      
+
       const quest = await zealyService.getQuest(questId);
       res.json({
         success: true,
-        data: quest
+        data: quest,
       });
     } catch (error: any) {
       logger.error("Zealy get quest error:", error);
@@ -292,17 +322,19 @@ export class ZealyController {
   ): Promise<void> {
     try {
       const questData = req.body;
-      
+
       // Basic validation - real validation would be more comprehensive
       if (!questData.name || !questData.categoryId) {
-        res.status(400).json({ error: "Quest name and category ID are required" });
+        res
+          .status(400)
+          .json({ error: "Quest name and category ID are required" });
         return;
       }
-      
+
       const newQuest = await zealyService.createQuest(questData);
       res.status(201).json({
         success: true,
-        data: newQuest
+        data: newQuest,
       });
     } catch (error: any) {
       logger.error("Zealy create quest error:", error);
@@ -321,16 +353,16 @@ export class ZealyController {
     try {
       const { questId } = req.params;
       const questData = req.body;
-      
+
       if (!questId) {
         res.status(400).json({ error: "Quest ID is required" });
         return;
       }
-      
+
       const updatedQuest = await zealyService.updateQuest(questId, questData);
       res.json({
         success: true,
-        data: updatedQuest
+        data: updatedQuest,
       });
     } catch (error: any) {
       logger.error("Zealy update quest error:", error);
@@ -352,7 +384,7 @@ export class ZealyController {
       const webhooks = await zealyService.listWebhooks();
       res.json({
         success: true,
-        data: webhooks
+        data: webhooks,
       });
     } catch (error: any) {
       logger.error("Zealy list webhooks error:", error);
@@ -370,30 +402,37 @@ export class ZealyController {
   ): Promise<void> {
     try {
       const { name, uri, active, events } = req.body;
-      
+
       // Validate required fields
-      if (!name || !uri || !events || !Array.isArray(events) || events.length === 0) {
-        res.status(400).json({ 
-          error: "Webhook name, URI, and at least one event are required" 
+      if (
+        !name ||
+        !uri ||
+        !events ||
+        !Array.isArray(events) ||
+        events.length === 0
+      ) {
+        res.status(400).json({
+          error: "Webhook name, URI, and at least one event are required",
         });
         return;
       }
-      
+
       const newWebhook = await zealyService.createWebhook({
         name,
         uri,
         active: active !== false, // Default to true if not specified
-        events
+        events,
       });
-      
+
       res.status(201).json({
         success: true,
-        data: newWebhook
+        data: newWebhook,
       });
     } catch (error: any) {
       logger.error("Zealy create webhook error:", error);
       res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || "Failed to create Zealy webhook",
+        error:
+          error.response?.data?.message || "Failed to create Zealy webhook",
       });
     }
   }
@@ -407,20 +446,21 @@ export class ZealyController {
     try {
       const { webhookId } = req.params;
       const webhookData = req.body;
-      
+
       if (!webhookId) {
         res.status(400).json({ error: "Webhook ID is required" });
         return;
       }
-      
+
       await zealyService.updateWebhook(webhookId, webhookData);
       res.json({
-        success: true
+        success: true,
       });
     } catch (error: any) {
       logger.error("Zealy update webhook error:", error);
       res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || "Failed to update Zealy webhook",
+        error:
+          error.response?.data?.message || "Failed to update Zealy webhook",
       });
     }
   }
@@ -433,20 +473,21 @@ export class ZealyController {
   ): Promise<void> {
     try {
       const { webhookId } = req.params;
-      
+
       if (!webhookId) {
         res.status(400).json({ error: "Webhook ID is required" });
         return;
       }
-      
+
       await zealyService.deleteWebhook(webhookId);
       res.json({
-        success: true
+        success: true,
       });
     } catch (error: any) {
       logger.error("Zealy delete webhook error:", error);
       res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || "Failed to delete Zealy webhook",
+        error:
+          error.response?.data?.message || "Failed to delete Zealy webhook",
       });
     }
   }
@@ -461,12 +502,14 @@ export class ZealyController {
       const eventTypes = await zealyService.getWebhookEventTypes();
       res.json({
         success: true,
-        data: eventTypes
+        data: eventTypes,
       });
     } catch (error: any) {
       logger.error("Zealy get webhook event types error:", error);
       res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || "Failed to get Zealy webhook event types",
+        error:
+          error.response?.data?.message ||
+          "Failed to get Zealy webhook event types",
       });
     }
   }
@@ -480,31 +523,32 @@ export class ZealyController {
     try {
       const { webhookId } = req.params;
       const { limit, page, statusFilter } = req.query;
-      
+
       if (!webhookId) {
         res.status(400).json({ error: "Webhook ID is required" });
         return;
       }
-      
+
       const params: any = {};
-      
+
       if (limit) params.limit = parseInt(limit as string);
       if (page) params.page = parseInt(page as string);
       if (statusFilter) {
-        params.statusFilter = Array.isArray(statusFilter) 
-          ? statusFilter 
+        params.statusFilter = Array.isArray(statusFilter)
+          ? statusFilter
           : [statusFilter as string];
       }
-      
+
       const events = await zealyService.getWebhookEvents(webhookId, params);
       res.json({
         success: true,
-        data: events
+        data: events,
       });
     } catch (error: any) {
       logger.error("Zealy get webhook events error:", error);
       res.status(error.response?.status || 500).json({
-        error: error.response?.data?.message || "Failed to get Zealy webhook events",
+        error:
+          error.response?.data?.message || "Failed to get Zealy webhook events",
       });
     }
   }

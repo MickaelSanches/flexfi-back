@@ -187,6 +187,7 @@ export class AuthController {
         formFullfilled: user.formFullfilled,
         userReferralCode: user.userReferralCode,
         isVerified: user.isVerified,
+        zealy_id: user.zealy_id,
       };
 
       // Logger la connexion réussie
@@ -376,6 +377,7 @@ export class AuthController {
         lastName: user.lastName,
         flexpoints_total: user.flexpoints_total,
         userReferralCode: user.userReferralCode,
+        zealy_id: user.zealy_id,
       }));
 
       res.status(200).json({
